@@ -43,18 +43,17 @@ const hint = {
 };
 const switchTravelTime = 360;
 let switchSelectedAt = 0;
-const pace = [null, {base:6300, change:540}, {base:3900, change:360}];
+const pace = [0, 6300, 3900];
 let tempoStep = 0;
 function duration() {
   if (!speed) return Infinity;
-  const {base, change} = pace[speed];
   const allowance = mode === 'route' ? 800 : 0;
-  return base - change * tempoStep + allowance;
+  return Math.round((pace[speed] + allowance) * .82 ** tempoStep);
 }
 
 function adjustTempo(correct) {
   const before = tempoStep;
-  if (speed) tempoStep = Math.max(-2, Math.min(5, tempoStep + (correct ? 1 : -1)));
+  if (speed) tempoStep = Math.max(-2, Math.min(9, tempoStep + (correct ? 1 : -1)));
   speedHint();
   if ((!endless() && index === roundSize - 1) || before === tempoStep) return '';
   return correct ? ' · Nächstes Wort schneller' : ' · Nächstes Wort langsamer';
@@ -63,6 +62,7 @@ function adjustTempo(correct) {
 function speedHint() {
   const unit = usesBaskets() ? 'Wort' : 'Weiche';
   const seconds = (duration() / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
+  $('liveTempo').textContent = speed ? `${seconds} s pro ${unit}` : 'Ohne Uhr';
   ui.speedHint.textContent = speed
     ? `${seconds} Sekunden pro ${unit}. Treffer erhöhen das Tempo, Fehler bremsen es.`
     : 'Entscheide in deinem eigenen Tempo.';

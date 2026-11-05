@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=16"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=16"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=16"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=17"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="guide">? <span>Spickzettel</span></button></div></header>
 <main>
 <section class="intro"><div class="eyebrow"><span></span> DEUTSCH · GRAMMATIK</div><h1>Wort<span>fall.</span></h1><p>Fünf Wortarten. Drei Spielmodi. Wie viele Wörter fängst du?</p><div class="hero-specs" aria-hidden="true"><span>01 — KORBFANG</span><span>02 — ENDLOS</span><span>03 — WORTWEICHE</span></div></section>
 <div class="layout">
 <section class="arcade" aria-label="Spiel">
-<div class="scoreboard" id="scoreboard"><div><small>PUNKTE</small><strong id="score">000</strong></div><div id="streakPanel"><small>SERIE</small><strong id="streak">0</strong></div><div><small id="roundLabel">RUNDE</small><strong id="round">0 / 10</strong></div><div id="highscorePanel" hidden><small>HIGHSCORE</small><strong id="highscore">000</strong></div><button id="pause" disabled aria-label="Pausieren">Ⅱ</button></div>
+<div class="scoreboard" id="scoreboard"><div><small>PUNKTE</small><strong id="score">000</strong><small id="liveTempo">6,3 s pro Wort</small></div><div id="streakPanel"><small>SERIE</small><strong id="streak">0</strong></div><div><small id="roundLabel">RUNDE</small><strong id="round">0 / 10</strong></div><div id="highscorePanel" hidden><small>HIGHSCORE</small><strong id="highscore">000</strong></div><button id="pause" disabled aria-label="Pausieren">Ⅱ</button></div>
 <progress id="roundProgress" class="round-progress" value="0" max="10" aria-label="Bearbeitete Wörter"></progress>
 <div class="arena" id="arena">
 <svg class="arena-art" viewBox="0 0 920 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
