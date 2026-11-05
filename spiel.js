@@ -437,6 +437,10 @@ function soundGlide(start, length, from, to, volume, type) {
 }
 function reaction(type) {
   if (!ui.effects.checked || reduceMotion.matches) return;
+  const impact = document.createElement('span');
+  impact.className = `impact impact-${type}`;
+  impact.addEventListener('animationend', () => impact.remove(), {once:true});
+  ui.particles.append(impact);
   const badge = document.createElement('span');
   badge.className = `reaction reaction-${type}`;
   badge.textContent = {clap:'👏', horn:'📣', tears:'😢'}[type];

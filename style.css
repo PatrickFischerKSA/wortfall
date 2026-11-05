@@ -181,3 +181,175 @@ body {
 /* Keep the next word readable while a reaction fades out. */
 .particles {z-index: 3;}
 .word {z-index: 4;}
+
+/* Wortfall's illustrated arcade cabinet. */
+:root {
+  --ink: #faf1ff;
+  --muted: #d0bce2;
+  --line: #533766;
+  --purple: #e6b2ff;
+  --accent: #f7ff76;
+  --arcade: #150c25;
+  --arcade-line: #4b2a67;
+  --arcade-muted: #d3b9e9;
+  background: #10081e;
+}
+body {
+  background: radial-gradient(ellipse at 8% 6%, #3c174e, transparent 37%),
+    radial-gradient(ellipse at 100% 38%, #33154e, transparent 42%), #10081e;
+}
+button {background: #251336;}
+button:focus-visible, input:focus-visible {outline-color: #f7ff76;}
+.top {
+  height: 62px;
+  background: #150b23;
+  border-bottom: 1px solid #603776;
+  box-shadow: 0 1px 14px #bc6cff25;
+}
+.mark {color: #230e33; background: #f7ff76; border-color: #f7ff76; box-shadow: 2px 2px #e66efc;}
+.tools button {background: #291539; border-color: #654381;}
+main {padding-top: 25px;}
+.intro {position: relative; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid #513460;}
+.intro h1 {
+  width: fit-content;
+  font-size: clamp(58px, 10vw, 117px);
+  line-height: .9;
+  letter-spacing: -.055em;
+  font-weight: 950;
+  color: #fff1fd;
+  text-shadow: 3px 3px #923cc9, 6px 6px #471f66;
+}
+.intro h1 span {color: #ee92ff;}
+.hero-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  color: #eab7fa;
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .09em;
+}
+.hero-specs span {padding: 4px 8px; border: 1px solid #65387a; border-radius: 3px; background: #301940;}
+@media (min-width: 970px) {.hero-specs {position: absolute; bottom: 15px; right: 0;}}
+.arcade {
+  border: 1px solid #a366d2;
+  border-radius: 18px;
+  box-shadow: 0 0 0 3px #201130, 0 7px 0 3px #43265e, 0 0 38px #c461ff29;
+}
+.scoreboard {background: linear-gradient(105deg, #2e1744, #1b112b 62%);}
+.scoreboard > div {padding-inline-start: 9px; border-inline-start: 2px solid #a66cdf;}
+.scoreboard strong {font: 850 clamp(17px, 2.4vw, 27px) ui-monospace, monospace;}
+.scoreboard #score, #highscorePanel strong {color: #f7ff76;}
+.scoreboard .on-streak strong {color: #ffd477; text-shadow: 0 0 10px #ffbf53a0;}
+.round-progress::-webkit-progress-value {background: linear-gradient(90deg,#f993ff,#f7ff76);}
+.round-progress::-moz-progress-bar {background: linear-gradient(90deg,#f993ff,#f7ff76);}
+.arena {
+  background: radial-gradient(ellipse at 72% 20%, #491964, transparent 58%),
+    linear-gradient(#1d0d35, #160b29 63%, #321341);
+  border-color: #664285;
+}
+.arena::before {display: none;}
+.arena-art {position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .56;}
+.arena:has(.overlay:not([hidden])) .arena-art {opacity: .94;}
+.stars {color: #f6a9ff70;}
+.has-lanes .lanes {
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(20% - 1px), #e9a5ff60 calc(20% - 1px), #e9a5ff60 20%);
+  mask-image: linear-gradient(transparent, #000 65%);
+}
+.overlay {
+  align-items: flex-start;
+  text-align: left;
+  padding-inline: clamp(21px, 6vw, 68px);
+  background: linear-gradient(90deg, #180b2aeb, #22102cb5 52%, #24113410);
+}
+.overlay h2 {
+  max-width: 18ch;
+  color: #fff5fd;
+  font-size: clamp(28px, 5.3vw, 62px);
+  line-height: .96;
+  text-shadow: 2px 3px #532783;
+}
+.overlay p {color: #f1dcf7; text-shadow: 0 1px 5px #100b20;}
+.overlay-label {color: #f7ff76;}
+.sample {margin: 0 0 13px;}
+.sample span, .word {color: #1d102b; border-color: #2d164a;}
+.sample span {box-shadow: 4px 5px #100a22, 0 0 24px #d684ff8a;}
+.word {
+  background: #fff1ff;
+  box-shadow: 3px 4px #140a25, 0 0 17px #ce8eff81;
+}
+.primary {
+  color: #261438;
+  background: #f7ff76;
+  box-shadow: 0 4px #968d28, 0 0 21px #eeff4c59;
+  border-radius: 7px;
+}
+.arcade #pause, .arcade #endRun {background: #3a2050; border-color: #9369b5;}
+.context, .route {color: #241035; border-color: #dbb4f0; background: #fff0ffeF;}
+.trail {background: linear-gradient(90deg, #f07dff, #f7ff76);}
+.targets {
+  background: linear-gradient(#28133d, #170c2a);
+  gap: 8px;
+}
+.target {
+  color: #20102e;
+  border-radius: 4px 4px 12px 12px;
+  border-top-color: #fffc;
+  border-bottom-color: #52227375;
+  background: linear-gradient(#fff7, transparent 58%), var(--tint);
+  box-shadow: inset 0 0 0 2px #442a6035;
+}
+.target.ready {outline-color: #2f1351; box-shadow: 0 0 16px var(--tint);}
+.feedback {background: #221130;}
+.feedback.good {background: #222a29;}
+.feedback.bad {background: #36182d;}
+.settings {
+  background: linear-gradient(145deg, #341a4a, #221131);
+  border-color: #694785;
+  box-shadow: 0 6px 0 #3c2454;
+}
+.settings-title span {color: #f7ff76; margin-right: 4px;}
+.settings .modes button {background: #291538; border-color: #694785;}
+.settings .modes button .icon {background: #492567; color: #f9dcff;}
+.settings [aria-pressed=true],
+.settings .modes button[aria-pressed=true] {
+  color: #fff4ff;
+  background: #593181;
+  border-color: #d494ff;
+}
+.settings .modes button[aria-pressed=true] .icon {background: #f5a6ff; color: #2c1241;}
+.segments {background: #1b0e2a;}
+.effects {border-color: #613a78;}
+.effects input {accent-color: #e9a9ff;}
+dialog {background: #291538;}
+@media (max-width: 480px) {
+  .overlay h2 {max-width: 15ch;}
+  .overlay {background: linear-gradient(90deg, #180b2af2, #22102c84);}
+  .scoreboard > div {padding-inline-start: 4px;}
+  .targets {gap: 4px;}
+  .target {font-size: 10px;}
+}
+
+.impact {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  width: 110px;
+  aspect-ratio: 1;
+  border: 4px solid #e7ff9e;
+  border-radius: 50%;
+  box-shadow: 0 0 24px #e7ff9e99, inset 0 0 16px #e7ff9e80;
+  animation: impact-wave .55s ease-out both;
+}
+.impact-horn {
+  border: 8px double #ffd477;
+  box-shadow: 0 0 35px #ffd477, inset 0 0 26px #ffd47780;
+}
+.impact-tears {
+  border-color: #8ddaff;
+  box-shadow: 0 0 21px #8ddaff80, inset 0 0 14px #8ddaff66;
+}
+@keyframes impact-wave {
+  from {transform: translate(-50%, -50%) scale(.15); opacity: .95;}
+  to {transform: translate(-50%, -50%) scale(3); opacity: 0;}
+}

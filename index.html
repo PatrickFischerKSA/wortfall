@@ -1,20 +1,43 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=12"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=15"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=16"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=16"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="guide">? <span>Spickzettel</span></button></div></header>
 <main>
-<section class="intro"><div class="eyebrow"><span></span> DEUTSCH · GRAMMATIK</div><h1>Wort<span>fall.</span></h1><p>Fünf Wortarten. Drei Spielmodi. Wie viele Wörter fängst du?</p></section>
+<section class="intro"><div class="eyebrow"><span></span> DEUTSCH · GRAMMATIK</div><h1>Wort<span>fall.</span></h1><p>Fünf Wortarten. Drei Spielmodi. Wie viele Wörter fängst du?</p><div class="hero-specs" aria-hidden="true"><span>01 — KORBFANG</span><span>02 — ENDLOS</span><span>03 — WORTWEICHE</span></div></section>
 <div class="layout">
 <section class="arcade" aria-label="Spiel">
 <div class="scoreboard" id="scoreboard"><div><small>PUNKTE</small><strong id="score">000</strong></div><div id="streakPanel"><small>SERIE</small><strong id="streak">0</strong></div><div><small id="roundLabel">RUNDE</small><strong id="round">0 / 10</strong></div><div id="highscorePanel" hidden><small>HIGHSCORE</small><strong id="highscore">000</strong></div><button id="pause" disabled aria-label="Pausieren">Ⅱ</button></div>
 <progress id="roundProgress" class="round-progress" value="0" max="10" aria-label="Bearbeitete Wörter"></progress>
 <div class="arena" id="arena">
+<svg class="arena-art" viewBox="0 0 920 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+<defs>
+  <linearGradient id="planet" x2=".3" y2="1" gradientUnits="objectBoundingBox">
+    <stop stop-color="#f27bff"/><stop offset=".55" stop-color="#8c48ef"/><stop offset="1" stop-color="#28134b"/>
+  </linearGradient>
+  <radialGradient id="halo"><stop stop-color="#d567ff" stop-opacity=".35"/><stop offset="1" stop-color="#aa4dff" stop-opacity="0"/></radialGradient>
+  <pattern id="starscape" width="133" height="101" patternUnits="userSpaceOnUse"><path d="M17 16h1m81 41h1m-61 32h1m77 8h1" stroke="#e2caff" stroke-width="2" stroke-linecap="round" opacity=".45"/><path d="M69 20v8m-4-4h8" stroke="#f6b4ff" opacity=".45"/></pattern>
+</defs>
+<rect width="920" height="540" fill="url(#starscape)"/>
+<circle cx="712" cy="114" r="208" fill="url(#halo)"/>
+<g transform="rotate(-19 712 114)">
+  <ellipse cx="712" cy="114" rx="177" ry="31" fill="none" stroke="#d382ff" stroke-width="2" opacity=".7"/>
+  <circle cx="712" cy="114" r="89" fill="url(#planet)" stroke="#e7a7ff" stroke-width="1.5"/>
+  <path d="M642 60q57 18 143 5m-157 19q73 16 168 5m-172 20q90 18 176 2m-172 21q82 15 168 1m-156 23q79 8 141 0m-117 22q53 3 92-4" fill="none" stroke="#250c58" stroke-width="2" opacity=".38"/>
+  <path d="M535 114a177 31 0 0 0 354 0" fill="none" stroke="#edafff" stroke-width="3"/>
+  <path d="M520 118a192 42 0 0 0 384 0" fill="none" stroke="#9a58ec" opacity=".5"/>
+</g>
+<g fill="none" stroke="#ae64f7" stroke-width="1" opacity=".49">
+  <path d="M0 460 460 319 920 460M0 510 460 319 920 510M114 540 460 319 806 540M260 540 460 319 660 540M391 540 460 319 529 540M460 319v221"/>
+  <path d="M0 410h920M0 428h920M0 450h920M0 477h920M0 508h920M0 538h920"/>
+</g>
+<g fill="none" stroke="#ffb4f9" opacity=".74"><path d="M89 110h30m-15-15v30M831 300h32m-16-16v32M150 298h14m-7-7v14"/><path d="M0 43h120l20 20h39m741 264H797l-21 21h-31"/></g>
+</svg>
 <div class="lanes" aria-hidden="true"></div>
 <div class="stars" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
 <div class="context" id="context" hidden></div>
 <div class="trail" id="trail" hidden></div><div id="word" class="word" hidden></div>
-<div id="overlay" class="overlay"><div class="sample" aria-hidden="true"><span>fliegen</span><span>Wolke</span><span>leise</span></div><span class="overlay-label">✦ WORTFALL ARCADE</span><h2 id="overlayTitle">Bereit zum Wortfang?</h2><p id="overlayText">Ordne fallende Wörter zu, bevor sie unten ankommen.</p><button class="primary" id="start">Spiel starten <span>→</span></button><button id="endRun" hidden>Endloslauf beenden</button></div>
+<div id="overlay" class="overlay"><div class="sample" aria-hidden="true"><span>fliegen</span><span>Wolke</span><span>leise</span></div><span class="overlay-label">✦ SPIELHALLE ✦</span><h2 id="overlayTitle">Bereit zum Wortfang?</h2><p id="overlayText">Ordne fallende Wörter zu, bevor sie unten ankommen.</p><button class="primary" id="start">Spiel starten <span>→</span></button><button id="endRun" hidden>Endloslauf beenden</button></div>
 <div id="junction" class="junction" aria-hidden="true">
 <svg viewBox="0 0 100 100" preserveAspectRatio="none">
   <path class="junction-trunk" d="M50 0 V26"/>
@@ -29,7 +52,7 @@
 <div class="feedback" id="feedback" role="status">← → lenkt. Leertaste oder ↓ wirft sofort ein.</div>
 </section>
 <aside class="settings" aria-label="Spieleinstellungen">
-<div class="settings-title">Spiel einstellen</div>
+<div class="settings-title"><span>✶</span> Spiel einstellen</div>
 <div class="eyebrow">01 / SPIELMODUS</div>
 <div class="modes" id="modes">
 <button data-mode="catch" aria-pressed="true"><b class="icon">↓</b><span><strong>Korbfang</strong><small>Wörter in fünf Körbe sortieren</small></span></button>
