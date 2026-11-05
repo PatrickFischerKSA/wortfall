@@ -117,3 +117,26 @@ body {
   .overlay {gap: 8px;}
   .sample span {padding: 7px 9px;}
 }
+
+.junction {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  border-bottom: 2px dashed #c4b4f58c;
+}
+.arena:has(.route:not([hidden])) .junction {display: block;}
+.junction svg {display: block; width: 100%; height: 100%; overflow: visible;}
+.junction path {
+  fill: none;
+  stroke: #9b8cc8;
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.junction[data-direction="left"] .junction-left,
+.junction[data-direction="right"] .junction-right {
+  stroke: #c9ff65;
+  stroke-width: 4;
+}

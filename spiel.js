@@ -38,8 +38,10 @@ const usesBaskets = () => mode !== 'route';
 const modeHint = () => hint[usesBaskets() ? 'catch' : 'route'];
 const hint = {
   catch: '← → lenkt. Leertaste oder ↓ wirft sofort ein. Unten fällt das Wort von selbst in den Korb.',
-  route: '← → zum Wählen, ↓ zum Bestätigen. Auch mit 1, 2 oder Klick.'
+  route: '← oder → lenkt das Wort. An der Linie zählt die erreichte Spur. Auch mit 1, 2 oder Tippen.'
 };
+const switchTravelTime = 360;
+let switchSelectedAt = 0;
 const pace = [null, {base:8000, change:640}, {base:5000, change:480}];
 let tempoStep = 0;
 function duration() {
@@ -107,11 +109,12 @@ function targets() {
     const kbd = document.createElement('kbd');
     kbd.textContent = i+1; kbd.setAttribute('aria-hidden','true');
     b.append(kbd, document.createTextNode(name));
-    b.addEventListener('click', () => answer(i));
+    b.addEventListener('click', () => usesBaskets() ? answer(i) : steerSwitch(i));
     return b;
   }));
   if (active && mode === 'route' && focused >= 0) ui.targets.children[Math.min(focused, labels.length-1)].focus();
   if (active && usesBaskets()) markBasket(keyboardTarget < 0 ? 2 : keyboardTarget);
+  if (active && !usesBaskets()) markBasket(keyboardTarget);
 }
 function markBasket(choice) {
   [...ui.targets.children].forEach((basket, index) => {
@@ -146,7 +149,7 @@ function idle() {
   for (const el of [ui.word,ui.context,ui.route,ui.trail]) el.hidden = true;
   if (endless()) {
     overlay('Bereit für den Endloslauf?', 'Fange Wörter, solange du willst. Über Pause kannst du den Lauf beenden.', 'Endloslauf starten');
-  } else overlay(usesBaskets() ? 'Bereit zum Wortfang?' : 'Bereit für die Wortweiche?', usesBaskets() ? 'Ordne fallende Wörter zu, bevor sie unten ankommen.' : 'Prüfe jedes Wort Schritt für Schritt und leite es zur richtigen Wortart.', 'Spiel starten');
+  } else overlay(usesBaskets() ? 'Bereit zum Wortfang?' : 'Bereit für die Wortweiche?', usesBaskets() ? 'Ordne fallende Wörter zu, bevor sie unten ankommen.' : 'Lenke das Wort vor der Abzweigung zum passenden Begriff.', 'Spiel starten');
   message(modeHint()); targets(); stats();
 }
 function shuffle(items) {
@@ -215,6 +218,7 @@ function showStage() {
   ui.pause.disabled = false; ui.pause.textContent = 'Ⅱ'; ui.pause.setAttribute('aria-label','Pausieren');
   ui.route.hidden = mode !== 'route';
   if (mode === 'route') {
+    delete $('junction').dataset.direction;
     const route = routes[card().type];
     ui.path.textContent = ['Start', ...route.slice(0,step).map(([key,i]) => stations[key][1][i])].join(' → ');
     ui.question.textContent = stations[branch()[0]][0];
@@ -222,14 +226,32 @@ function showStage() {
   targets(); stats(); paint(); frame = requestAnimationFrame(tick);
 }
 function paint() {
-  const progress = speed ? Math.min(1,elapsed/duration()) : .43;
+  const route = !usesBaskets();
+  const travel = route && keyboardTarget >= 0
+    ? Math.min(1, (elapsed - switchSelectedAt) / switchTravelTime)
+    : 0;
+  const progress = speed ? Math.min(1,elapsed/duration()) : .43 + .57 * travel;
   const top = ui.context.hidden ? 12 : ui.context.offsetHeight + 18;
   const bottom = mode === 'route' ? ui.route.offsetHeight + 19 : 10;
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
   const fall = speed && usesBaskets() ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
+  if (route) {
+    const split = Math.max(0, (progress - .26) / .74);
+    const side = keyboardTarget === 0 ? -1 : 1;
+    ui.word.style.left = `${50 + side * 25 * Math.min(split, travel)}%`;
+    $('junction').style.top = `${top + ui.word.offsetHeight / 2}px`;
+    $('junction').style.height = `${distance}px`;
+  }
   if (drag === null) ui.word.style.top = `${top + fraction * distance}px`;
   ui.trail.style.width = `${100*(1-progress)}%`;
+}
+function steerSwitch(choice) {
+  if (state !== 'playing' || keyboardTarget === choice) return;
+  keyboardTarget = choice;
+  switchSelectedAt = elapsed;
+  markBasket(choice);
+  $('junction').dataset.direction = choice === 0 ? 'left' : 'right';
 }
 function positionWordOverBasket() {
   if (!usesBaskets() || keyboardTarget < 0 || drag !== null) return;
@@ -259,9 +281,11 @@ function tick(now) {
   if (state !== 'playing') return;
   if (last) elapsed += now-last;
   last = now; paint();
-  if (elapsed >= duration()) {
+  const reachedSwitch = !usesBaskets() && keyboardTarget >= 0
+    && elapsed - switchSelectedAt >= switchTravelTime;
+  if (elapsed >= duration() || (!speed && reachedSwitch)) {
     if (usesBaskets()) answer(basketBelowWord(), true);
-    else answer(-1);
+    else answer(reachedSwitch ? keyboardTarget : -1);
     return;
   }
   frame = requestAnimationFrame(tick);
@@ -296,7 +320,8 @@ function answer(choice, fastDrop = false) {
     const nextPace = adjustTempo(false);
     streak = 0; play('miss');
     const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
-    message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
+    const result = choice < 0 ? 'Abzweigung verpasst.' : !usesBaskets() ? 'Falsche Abzweigung.' : 'Noch nicht richtig.';
+    message(`${result}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
   if (usesBaskets()) sink(choice, fastDrop);
   stats();
@@ -417,6 +442,7 @@ ui.speeds.onclick = e => {
     ? speed ? elapsed / duration() : 0
     : 0;
   speed = Number(b.dataset.speed); elapsed = speed ? fraction * duration() : 0;
+  switchSelectedAt = elapsed;
   settings();
   if (state === 'playing' || state === 'paused') { ui.trail.hidden = !speed; paint(); }
 };
@@ -433,25 +459,32 @@ document.addEventListener('keydown',e => {
       if (state !== 'playing') return;
     }
     const buttons = [...ui.targets.children];
-    const focused = buttons.indexOf(document.activeElement);
-    const selected = mode === 'route' && focused >= 0 ? focused : keyboardTarget;
+    if (!usesBaskets()) {
+      if (direction) {
+        const choice = direction < 0 ? 0 : 1;
+        buttons[choice].focus({preventScroll:true});
+        steerSwitch(choice);
+      }
+      return;
+    }
     if (direction) {
-      const next = selected < 0 && mode === 'route'
-        ? (direction < 0 ? 0 : 1)
-        : (selected < 0 ? Math.floor(buttons.length / 2) : selected) + direction;
+      const next = (keyboardTarget < 0 ? Math.floor(buttons.length / 2) : keyboardTarget) + direction;
       keyboardTarget = Math.max(0, Math.min(buttons.length - 1, next));
       buttons[keyboardTarget].focus({preventScroll:true});
       positionWordOverBasket();
     } else if (!e.repeat && drop) {
       answer(basketBelowWord(), true);
-    } else if (!e.repeat && selected >= 0) {
-      answer(selected);
     }
     return;
   }
   if (e.repeat) return;
   if (e.key === 'Escape') { if (state === 'playing') pause(true); else if (state === 'paused') resume(); }
-  if (state === 'playing' && /^[1-5]$/.test(e.key) && Number(e.key)<=ui.targets.children.length) { e.preventDefault(); answer(Number(e.key)-1); }
+  if (state === 'playing' && /^[1-5]$/.test(e.key) && Number(e.key)<=ui.targets.children.length) {
+    e.preventDefault();
+    const choice = Number(e.key)-1;
+    if (usesBaskets()) answer(choice);
+    else steerSwitch(choice);
+  }
 });
 window.addEventListener('resize', () => {
   if (state === 'playing' || state === 'paused') positionWordOverBasket();
