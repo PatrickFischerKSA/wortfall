@@ -43,12 +43,12 @@ const hint = {
 };
 const switchTravelTime = 360;
 let switchSelectedAt = 0;
-const pace = [null, {base:8000, change:640}, {base:5000, change:480}];
+const pace = [null, {base:6300, change:540}, {base:3900, change:360}];
 let tempoStep = 0;
 function duration() {
   if (!speed) return Infinity;
   const {base, change} = pace[speed];
-  const allowance = mode === 'route' ? 1000 : 0;
+  const allowance = mode === 'route' ? 800 : 0;
   return base - change * tempoStep + allowance;
 }
 
@@ -237,6 +237,9 @@ function paint() {
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
   const fall = speed && usesBaskets() ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
+  const spin = speed && ui.effects.checked && !reduceMotion.matches && drag === null;
+  const turn = Math.max(0, Math.min(1, (progress - .12) / .76));
+  ui.word.style.rotate = spin ? `${(index % 2 ? -1 : 1) * turn * 360}deg` : '';
   if (route) {
     const split = Math.max(0, (progress - .26) / .74);
     const side = keyboardTarget === 0 ? -1 : 1;
@@ -293,6 +296,7 @@ function tick(now) {
 }
 function answer(choice, fastDrop = false) {
   if (state !== 'playing') return;
+  ui.word.style.rotate = '';
   const c = card();
   const expected = usesBaskets() ? c.type : branch()[1];
   const correct = choice === expected;
@@ -481,6 +485,7 @@ ui.word.addEventListener('pointerdown',e => {
   if (state !== 'playing' || !usesBaskets() || e.button !== 0 || drag !== null) return;
   keyboardTarget = -1;
   drag = e.pointerId; ui.word.setPointerCapture(drag); e.preventDefault();
+  ui.word.style.rotate = '';
 });
 ui.word.addEventListener('pointermove',e => {
   if (drag !== e.pointerId) return;
@@ -507,7 +512,12 @@ ui.sound.onclick = () => {
   if (sound) { initAudio(); play('step'); }
 };
 ui.guide.onclick = () => { pause(); ui.help.showModal(); };
-ui.effects.onchange = () => { if (!ui.effects.checked) ui.particles.replaceChildren(); };
+ui.effects.onchange = () => {
+  if (!ui.effects.checked) {
+    ui.particles.replaceChildren();
+    ui.word.style.rotate = '';
+  }
+};
 ui.modes.onclick = e => { const b=e.target.closest('button'); if (b && b.dataset.mode !== mode) { mode=b.dataset.mode; settings(); idle(); } };
 ui.levels.onclick = e => { const b=e.target.closest('button'); if (b && Number(b.dataset.level) !== level) { level=Number(b.dataset.level); settings(); idle(); } };
 ui.speeds.onclick = e => {
