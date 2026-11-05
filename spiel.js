@@ -239,7 +239,8 @@ function paint() {
   const fraction = reduceMotion.matches ? .43 : fall;
   const spin = speed && ui.effects.checked && !reduceMotion.matches && drag === null;
   const turn = Math.max(0, Math.min(1, (progress - .12) / .76));
-  ui.word.style.rotate = spin ? `${(index % 2 ? -1 : 1) * turn * 360}deg` : '';
+  const angle = 180 * Math.sin(Math.PI * turn) ** 2;
+  ui.word.style.rotate = spin ? `${(index % 2 ? -1 : 1) * angle}deg` : '';
   if (route) {
     const split = Math.max(0, (progress - .26) / .74);
     const side = keyboardTarget === 0 ? -1 : 1;
