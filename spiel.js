@@ -10,20 +10,28 @@ const hint = {
   catch: 'Korb anklicken, Wort hineinziehen oder 1–5 drücken.',
   route: 'Wähle an jeder Weiche den passenden Weg. Tasten: 1 und 2.'
 };
-const pace = [null, {first:8000, final:4800}, {first:5000, final:2600}];
+const pace = [null, {base:8000, change:640}, {base:5000, change:480}];
+let tempoStep = 0;
 function duration() {
   if (!speed) return Infinity;
-  const {first, final} = pace[speed];
-  const progress = Math.min(index, roundSize - 1) / (roundSize - 1);
+  const {base, change} = pace[speed];
   const allowance = mode === 'route' ? 1000 : 0;
-  return first + (final - first) * progress + allowance;
+  return base - change * tempoStep + allowance;
+}
+
+function adjustTempo(correct) {
+  const before = tempoStep;
+  if (speed) tempoStep = Math.max(-2, Math.min(5, tempoStep + (correct ? 1 : -1)));
+  speedHint();
+  if (index === roundSize - 1 || before === tempoStep) return '';
+  return correct ? ' · Nächstes Wort schneller' : ' · Nächstes Wort langsamer';
 }
 
 function speedHint() {
   const unit = mode === 'catch' ? 'Wort' : 'Weiche';
   const seconds = (duration() / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
   ui.speedHint.textContent = speed
-    ? `${seconds} Sekunden pro ${unit}. Das Tempo steigt mit jedem Wort.`
+    ? `${seconds} Sekunden pro ${unit}. Treffer erhöhen das Tempo, Fehler bremsen es.`
     : 'Entscheide in deinem eigenen Tempo.';
 }
 const card = () => deck[index];
@@ -82,6 +90,7 @@ function idle() {
   stopMotion();
   dropAnimation?.cancel();
   state = 'idle'; index = points = streak = hits = 0;
+  tempoStep = 0;
   speedHint();
   ui.word.style.background = '';
 
@@ -105,6 +114,7 @@ function start() {
   const grouped = classes.map((_,type) => shuffle(bank.filter(c => c.type === type)).slice(0,2));
   deck = shuffle(grouped.flat());
   index = points = streak = hits = step = 0;
+  tempoStep = 0;
   nextCard();
 }
 function nextCard() {
@@ -166,15 +176,22 @@ function answer(choice) {
   for (const b of ui.targets.children) b.disabled = true;
   ui.trail.hidden = true;
   if (correct) {
-    hits++; streak++; points += 100 + Math.min(5,streak-1)*20;
+    hits++; streak++;
+    const tempoBonus = speed ? tempoStep * 10 + (speed === 2 ? 30 : 0) : 0;
+    const earned = 100 + Math.min(5,streak-1)*20 + tempoBonus;
+    points += earned;
+    const nextPace = adjustTempo(true);
     ui.word.style.background = tints[c.type];
     if (mode === 'catch') sink(choice);
     pop(); play(streak % 3 === 0 ? 'combo' : 'good');
-    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}.${streak % 3 === 0 ? ' · ' + streak + ' in Serie!' : ''}`,'good');
+    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${nextPace}`,'good');
   } else {
+    const lost = Math.min(points, 25);
+    points -= lost;
+    const nextPace = adjustTempo(false);
     streak = 0; play('miss');
     const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
-    message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}.`,'bad');
+    message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
   stats();
   nextTimer = setTimeout(() => {
