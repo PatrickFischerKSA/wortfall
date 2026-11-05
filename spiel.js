@@ -10,7 +10,22 @@ const hint = {
   catch: 'Korb anklicken, Wort hineinziehen oder 1–5 drücken.',
   route: 'Wähle an jeder Weiche den passenden Weg. Tasten: 1 und 2.'
 };
-const duration = () => [Infinity, 7000, 3800][speed] + (mode === 'route' && speed ? 1000 : 0);
+const pace = [null, {first:8000, final:4800}, {first:5000, final:2600}];
+function duration() {
+  if (!speed) return Infinity;
+  const {first, final} = pace[speed];
+  const progress = Math.min(index, roundSize - 1) / (roundSize - 1);
+  const allowance = mode === 'route' ? 1000 : 0;
+  return first + (final - first) * progress + allowance;
+}
+
+function speedHint() {
+  const unit = mode === 'catch' ? 'Wort' : 'Weiche';
+  const seconds = (duration() / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
+  ui.speedHint.textContent = speed
+    ? `${seconds} Sekunden pro ${unit}. Das Tempo steigt mit jedem Wort.`
+    : 'Entscheide in deinem eigenen Tempo.';
+}
 const card = () => deck[index];
 const branch = () => routes[card().type][step];
 
@@ -20,7 +35,7 @@ function setPressed(group, key, value) {
 function settings() {
   setPressed(ui.modes,'mode',mode); setPressed(ui.levels,'level',level); setPressed(ui.speeds,'speed',speed);
   ui.levelHint.textContent = ['Klare Fälle aus dem Alltag.', 'Gebeugte Formen und Wörter im Satz.', 'Grenzfälle, Nominalisierungen und Zahladjektive.'][level];
-  ui.speedHint.textContent = speed ? `${String(duration()/1000).replace('.', ',')} Sekunden pro ${mode === 'catch' ? 'Wort' : 'Weiche'}.` : 'Entscheide in deinem eigenen Tempo.';
+  speedHint();
 }
 function stats() {
   ui.score.textContent = String(points).padStart(3,'0');
@@ -67,6 +82,7 @@ function idle() {
   stopMotion();
   dropAnimation?.cancel();
   state = 'idle'; index = points = streak = hits = 0;
+  speedHint();
   ui.word.style.background = '';
 
   ui.pause.disabled = true;
@@ -108,6 +124,7 @@ function nextCard() {
 }
 function showStage() {
   state = 'playing'; elapsed = 0; last = 0;
+  speedHint();
   ui.overlay.hidden = true; ui.word.hidden = false; ui.trail.hidden = !speed;
   ui.pause.disabled = false; ui.pause.textContent = 'Ⅱ'; ui.pause.setAttribute('aria-label','Pausieren');
   ui.route.hidden = mode !== 'route';
@@ -123,7 +140,8 @@ function paint() {
   const top = ui.context.hidden ? 12 : ui.context.offsetHeight + 18;
   const bottom = mode === 'route' ? ui.route.offsetHeight + 19 : 10;
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
-  const fraction = reduceMotion.matches ? .43 : progress;
+  const fall = speed && mode === 'catch' ? progress * (.55 + .45 * progress) : progress;
+  const fraction = reduceMotion.matches ? .43 : fall;
   if (drag === null) ui.word.style.top = `${top + fraction * distance}px`;
   ui.trail.style.width = `${100*(1-progress)}%`;
 }
@@ -262,7 +280,9 @@ ui.modes.onclick = e => { const b=e.target.closest('button'); if (b && b.dataset
 ui.levels.onclick = e => { const b=e.target.closest('button'); if (b && Number(b.dataset.level) !== level) { level=Number(b.dataset.level); settings(); idle(); } };
 ui.speeds.onclick = e => {
   const b=e.target.closest('button'); if (!b || Number(b.dataset.speed) === speed) return;
-  const fraction = speed ? elapsed / duration() : 0;
+  const fraction = state === 'playing' || state === 'paused'
+    ? speed ? elapsed / duration() : 0
+    : 0;
   speed = Number(b.dataset.speed); elapsed = speed ? fraction * duration() : 0;
   settings();
   if (state === 'playing' || state === 'paused') { ui.trail.hidden = !speed; paint(); }
