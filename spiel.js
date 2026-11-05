@@ -8,7 +8,7 @@ let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
 const roundSize = 10;
 const hint = {
-  catch: '← → zum Lenken, ↓ zum Einwerfen. Auch mit 1–5, Klick oder Ziehen.',
+  catch: '← → lenkt. Leertaste oder ↓ wirft sofort ein. Unten fällt das Wort von selbst in den Korb.',
   route: '← → zum Wählen, ↓ zum Bestätigen. Auch mit 1, 2 oder Klick.'
 };
 const pace = [null, {base:8000, change:640}, {base:5000, change:480}];
@@ -70,7 +70,13 @@ function targets() {
     b.addEventListener('click', () => answer(i));
     return b;
   }));
-  if (active && focused >= 0) ui.targets.children[Math.min(focused, labels.length-1)].focus();
+  if (active && mode === 'route' && focused >= 0) ui.targets.children[Math.min(focused, labels.length-1)].focus();
+  if (active && mode === 'catch') markBasket(keyboardTarget < 0 ? 2 : keyboardTarget);
+}
+function markBasket(choice) {
+  [...ui.targets.children].forEach((basket, index) => {
+    basket.classList.toggle('ready', index === choice);
+  });
 }
 function overlay(title, body, action) {
   ui.overlay.hidden = false;
@@ -164,15 +170,35 @@ function positionWordOverBasket() {
   const half = ui.word.offsetWidth / 2;
   const center = basket.left + basket.width / 2 - arena.left;
   ui.word.style.left = Math.max(half, Math.min(arena.width - half, center)) + 'px';
+  markBasket(keyboardTarget);
+}
+function basketBelowWord() {
+  if (keyboardTarget >= 0) return keyboardTarget;
+  const word = ui.word.getBoundingClientRect();
+  const center = word.left + word.width / 2;
+  let nearest = 0, shortest = Infinity;
+  [...ui.targets.children].forEach((basket, index) => {
+    const rect = basket.getBoundingClientRect();
+    const distance = Math.abs(center - (rect.left + rect.width / 2));
+    if (distance < shortest) {
+      nearest = index;
+      shortest = distance;
+    }
+  });
+  return nearest;
 }
 function tick(now) {
   if (state !== 'playing') return;
   if (last) elapsed += now-last;
   last = now; paint();
-  if (elapsed >= duration()) { answer(-1); return; }
+  if (elapsed >= duration()) {
+    if (mode === 'catch') answer(basketBelowWord(), true);
+    else answer(-1);
+    return;
+  }
   frame = requestAnimationFrame(tick);
 }
-function answer(choice) {
+function answer(choice, fastDrop = false) {
   if (state !== 'playing') return;
   const c = card();
   const expected = mode === 'catch' ? c.type : branch()[1];
@@ -192,7 +218,6 @@ function answer(choice) {
     points += earned;
     const nextPace = adjustTempo(true);
     ui.word.style.background = tints[c.type];
-    if (mode === 'catch') sink(choice);
     pop(); play(streak % 3 === 0 ? 'combo' : 'good');
     message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${nextPace}`,'good');
   } else {
@@ -203,6 +228,7 @@ function answer(choice) {
     const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
     message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
+  if (mode === 'catch') sink(choice, fastDrop);
   stats();
   nextTimer = setTimeout(advanceAfterAnswer, correct ? 480 : 700);
 }
@@ -263,8 +289,11 @@ function pop() {
     ui.particles.append(spark);
   }
 }
-function sink(choice) {
-  if (reduceMotion.matches || !ui.effects.checked) return;
+function sink(choice, fastDrop) {
+  if (reduceMotion.matches || !ui.effects.checked) {
+    if (fastDrop) ui.word.hidden = true;
+    return;
+  }
   const basket = ui.targets.children[choice];
   const from = ui.word.getBoundingClientRect(), to = basket.getBoundingClientRect();
   const x = to.left + to.width/2 - from.left - from.width/2;
@@ -272,8 +301,8 @@ function sink(choice) {
   dropAnimation = ui.word.animate([
     {transform:'translate(-50%, 0)'},
     {transform:`translate(calc(-50% + ${x}px), ${y}px) scale(.4)`,opacity:0}
-  ], {duration:460,fill:'forwards',easing:'cubic-bezier(.4,0,.8,1)'});
-  basket.animate([{transform:'scale(1)'},{transform:'scale(1.09)'},{transform:'scale(1)'}],{delay:300,duration:260});
+  ], {duration:fastDrop ? 100 : 460,fill:'forwards',easing:'cubic-bezier(.4,0,.8,1)'});
+  basket.animate([{transform:'scale(1)'},{transform:'scale(1.09)'},{transform:'scale(1)'}],{delay:fastDrop ? 60 : 300,duration:260});
 }
 function dropTarget(x,y) {
   return [...ui.targets.children].findIndex(b => {
@@ -291,17 +320,16 @@ ui.word.addEventListener('pointermove',e => {
   const r=ui.arena.getBoundingClientRect(), half=ui.word.offsetWidth/2;
   ui.word.style.left = Math.max(half,Math.min(r.width-half,e.clientX-r.left))+'px';
   ui.word.style.top = Math.max(0,Math.min(r.height-ui.word.offsetHeight,e.clientY-r.top-ui.word.offsetHeight/2))+'px';
-  const target=dropTarget(e.clientX,e.clientY);
-  [...ui.targets.children].forEach((b,i)=>b.classList.toggle('ready',i===target));
+  markBasket(basketBelowWord());
 });
 ui.word.addEventListener('pointerup',e => {
   if (drag !== e.pointerId) return;
   const choice=dropTarget(e.clientX,e.clientY);
-  drag=null; ui.word.style.left='50%';
-  for (const b of ui.targets.children) b.classList.remove('ready');
+  drag=null;
   if (choice>=0) answer(choice);
+  else { ui.word.style.left='50%'; markBasket(2); }
 });
-ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) { drag=null; ui.word.style.left='50%'; for (const b of ui.targets.children) b.classList.remove('ready'); } });
+ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) { drag=null; ui.word.style.left='50%'; markBasket(2); } });
 ui.start.onclick = start;
 ui.pause.onclick = () => state === 'paused' ? resume() : pause(true);
 ui.sound.onclick = () => { sound = !sound; ui.sound.setAttribute('aria-pressed',String(sound)); if (sound) { initAudio(); play('step'); } };
@@ -321,7 +349,8 @@ ui.speeds.onclick = e => {
 document.addEventListener('keydown',e => {
   if (e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
   const direction = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
-  if ((state === 'playing' || state === 'feedback') && drag === null && (direction || e.key === 'ArrowDown')) {
+  const drop = mode === 'catch' && (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowDown');
+  if ((state === 'playing' || state === 'feedback') && drag === null && (direction || drop || e.key === 'ArrowDown')) {
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
     e.preventDefault();
     if (state === 'feedback') {
@@ -331,7 +360,7 @@ document.addEventListener('keydown',e => {
     }
     const buttons = [...ui.targets.children];
     const focused = buttons.indexOf(document.activeElement);
-    const selected = focused >= 0 ? focused : keyboardTarget;
+    const selected = mode === 'route' && focused >= 0 ? focused : keyboardTarget;
     if (direction) {
       const next = selected < 0 && mode === 'route'
         ? (direction < 0 ? 0 : 1)
@@ -339,6 +368,8 @@ document.addEventListener('keydown',e => {
       keyboardTarget = Math.max(0, Math.min(buttons.length - 1, next));
       buttons[keyboardTarget].focus({preventScroll:true});
       positionWordOverBasket();
+    } else if (!e.repeat && drop) {
+      answer(basketBelowWord(), true);
     } else if (!e.repeat && selected >= 0) {
       answer(selected);
     }
