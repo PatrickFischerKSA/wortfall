@@ -140,3 +140,44 @@ body {
   stroke: #c9ff65;
   stroke-width: 4;
 }
+
+.reaction {
+  position: absolute;
+  left: 50%;
+  top: 37%;
+  padding: .25em .42em;
+  border: 2px solid #c9ff65;
+  border-radius: .5em;
+  background: #211d38;
+  box-shadow: 0 0 24px #c9ff6566;
+  font-size: clamp(26px, 5vw, 52px);
+  line-height: 1.15;
+  animation: reaction-pop .72s ease-out both;
+}
+.reaction-horn {border-color: #ffd477; box-shadow: 0 0 25px #ffd47780;}
+.reaction-tears {border-color: #8ddaff; box-shadow: 0 0 24px #8ddaff66;}
+.tear {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 9px;
+  height: 15px;
+  border-radius: 75% 25% 60% 60%;
+  background: #8ddaff;
+  box-shadow: 0 0 8px #8ddaff;
+  animation: tear-fall .62s ease-in both;
+}
+@keyframes reaction-pop {
+  0% {opacity: 0; transform: translate(-50%, 10px) scale(.55);}
+  22% {opacity: 1; transform: translate(-50%, 0) scale(1.15);}
+  55% {opacity: 1; transform: translate(-50%, -8px) scale(1);}
+  100% {opacity: 0; transform: translate(-50%, -28px) scale(.87);}
+}
+@keyframes tear-fall {
+  0% {opacity: 0; transform: translate(-50%, 0) rotate(35deg);}
+  22% {opacity: 1;}
+  100% {opacity: 0; transform: translate(var(--drift), 90px) rotate(35deg);}
+}
+/* Keep the next word readable while a reaction fades out. */
+.particles {z-index: 3;}
+.word {z-index: 4;}

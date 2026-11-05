@@ -3,6 +3,7 @@ const $ = id => document.getElementById(id);
 const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','guide','help'].map(id => [id,$(id)]));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = true, audio;
+let soundBus, clapNoise;
 let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step = 0;
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
@@ -311,14 +312,19 @@ function answer(choice, fastDrop = false) {
     points += earned;
     const nextPace = adjustTempo(true);
     ui.word.style.background = tints[c.type];
-    pop(); play(streak % 3 === 0 ? 'combo' : 'good');
-    const milestone = [3, 5, 10].includes(streak) ? ` · ✦ ${streak} in Folge!` : '';
-    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${milestone}${nextPace}`,'good');
+    const milestone = [3, 5, 10].includes(streak);
+    pop();
+    reaction(milestone ? 'horn' : 'clap');
+    play(milestone ? 'combo' : 'good');
+    const celebration = milestone ? ` · ✦ ${streak} in Folge!` : '';
+    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${celebration}${nextPace}`,'good');
   } else {
     const lost = Math.min(points, 25);
     points -= lost;
     const nextPace = adjustTempo(false);
-    streak = 0; play('miss');
+    streak = 0;
+    reaction('tears');
+    play('miss');
     const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
     const result = choice < 0 ? 'Abzweigung verpasst.' : !usesBaskets() ? 'Falsche Abzweigung.' : 'Noch nicht richtig.';
     message(`${result}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
@@ -361,20 +367,83 @@ function initAudio() {
   if (!sound) return;
   try {
     const Audio = window.AudioContext || window.webkitAudioContext;
-    if (Audio) { audio ||= new Audio(); audio.resume().catch(()=>{}); }
+    if (!Audio) return;
+    if (!audio) {
+      audio = new Audio();
+      soundBus = audio.createGain();
+      soundBus.connect(audio.destination);
+      clapNoise = audio.createBuffer(1, Math.ceil(audio.sampleRate * .12), audio.sampleRate);
+      const samples = clapNoise.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    }
+    audio.resume().catch(()=>{});
   } catch {}
 }
 function play(type) {
-  if (!sound || !audio || audio.state !== 'running') return;
-  const notes = {step:[390], good:[523,659], combo:[523,659,784,1047], miss:[240,160]}[type];
-  notes.forEach((freq,i) => {
-    const time = audio.currentTime + i*.075, osc = audio.createOscillator(), gain = audio.createGain();
-    osc.frequency.value = freq; osc.type = type === 'miss' ? 'triangle' : 'sine';
-    gain.gain.setValueAtTime(.0001,time);
-    gain.gain.exponentialRampToValueAtTime(.10,time+.02);
-    gain.gain.exponentialRampToValueAtTime(.0001,time+.15);
-    osc.connect(gain).connect(audio.destination); osc.start(time); osc.stop(time+.16);
-  });
+  if (!sound || !soundBus || audio.state !== 'running') return;
+  const now = audio.currentTime;
+  if (type === 'good' || type === 'combo') {
+    for (const offset of [0, .095, .21]) {
+      const source = audio.createBufferSource();
+      source.buffer = clapNoise;
+      const filter = audio.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1550;
+      filter.Q.value = .65;
+      source.connect(filter);
+      soundEnvelope(source, filter, now + offset, .1, .2, .004);
+    }
+  }
+  if (type === 'combo') {
+    soundGlide(now + .08, .13, 300, 273, .095, 'sawtooth');
+    soundGlide(now + .25, .21, 378, 306, .09, 'sawtooth');
+  }
+  if (type === 'miss') {
+    soundGlide(now, .19, 565, 295, .10, 'triangle');
+    soundGlide(now + .21, .22, 470, 210, .08, 'triangle');
+  }
+  if (type === 'step') soundGlide(now, .12, 390, 440, .08, 'sine');
+}
+function soundEnvelope(source, output, start, length, volume, attack = .025) {
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + attack);
+  gain.gain.exponentialRampToValueAtTime(.0001, start + length);
+  output.connect(gain).connect(soundBus);
+  source.start(start);
+  source.stop(start + length);
+}
+function soundGlide(start, length, from, to, volume, type) {
+  const source = audio.createOscillator();
+  source.type = type;
+  source.frequency.setValueAtTime(from, start);
+  source.frequency.exponentialRampToValueAtTime(to, start + length);
+  if (type === 'sawtooth') {
+    const filter = audio.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1050;
+    source.connect(filter);
+    soundEnvelope(source, filter, start, length, volume);
+  } else {
+    soundEnvelope(source, source, start, length, volume);
+  }
+}
+function reaction(type) {
+  if (!ui.effects.checked || reduceMotion.matches) return;
+  const badge = document.createElement('span');
+  badge.className = `reaction reaction-${type}`;
+  badge.textContent = {clap:'👏', horn:'📣', tears:'😢'}[type];
+  badge.addEventListener('animationend', () => badge.remove(), {once:true});
+  ui.particles.append(badge);
+  if (type !== 'tears') return;
+  for (let i = 0; i < 8; i++) {
+    const tear = document.createElement('span');
+    tear.className = 'tear';
+    tear.style.setProperty('--drift', `${(i - 3.5) * 17}px`);
+    tear.style.animationDelay = `${(i % 4) * 55}ms`;
+    tear.addEventListener('animationend', () => tear.remove(), {once:true});
+    ui.particles.append(tear);
+  }
 }
 function pop() {
   if (!ui.effects.checked || reduceMotion.matches) return;
@@ -431,7 +500,12 @@ ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) {
 ui.start.onclick = start;
 ui.endRun.onclick = () => { if (endless() && state === 'paused') finish(); };
 ui.pause.onclick = () => state === 'paused' ? resume() : pause(true);
-ui.sound.onclick = () => { sound = !sound; ui.sound.setAttribute('aria-pressed',String(sound)); if (sound) { initAudio(); play('step'); } };
+ui.sound.onclick = () => {
+  sound = !sound;
+  ui.sound.setAttribute('aria-pressed', String(sound));
+  if (soundBus) soundBus.gain.value = sound ? 1 : 0;
+  if (sound) { initAudio(); play('step'); }
+};
 ui.guide.onclick = () => { pause(); ui.help.showModal(); };
 ui.effects.onchange = () => { if (!ui.effects.checked) ui.particles.replaceChildren(); };
 ui.modes.onclick = e => { const b=e.target.closest('button'); if (b && b.dataset.mode !== mode) { mode=b.dataset.mode; settings(); idle(); } };
