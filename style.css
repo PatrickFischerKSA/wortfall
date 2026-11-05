@@ -3,3 +3,117 @@
 .scoreboard.has-highscore{grid-template-columns:repeat(4,minmax(0,1fr)) auto}
 #highscorePanel strong{color:var(--purple)}
 @media(max-width:480px){.scoreboard.has-highscore{padding-inline:10px;gap:5px}.scoreboard.has-highscore small{font-size:9px;letter-spacing:.03em}.scoreboard.has-highscore strong{font-size:clamp(14px,4.5vw,22px);overflow-wrap:anywhere}}
+
+/* The dark play surface keeps the five brightly coloured targets distinct. */
+:root {
+  --ink: #17182d;
+  --muted: #504b69;
+  --purple: #5840af;
+  --accent: #c9ff65;
+  --arcade: #14152a;
+  --arcade-line: #343452;
+  --arcade-muted: #c3bedc;
+}
+body {
+  background: radial-gradient(ellipse at 87% 0%, #e7e0ff, transparent 48%), #f8f6ff;
+}
+.top {background: #fcfbff;}
+.mark {background: #c9ff65;}
+.intro h1 span {color: #6044bd;}
+.arcade {
+  color: #f9f7ff;
+  background: var(--arcade);
+  border-color: #292747;
+  box-shadow: 0 9px 0 #d8d0f2, 0 18px 36px #22164d26;
+}
+.scoreboard {background: #1d1c37;}
+.scoreboard small {color: var(--arcade-muted);}
+.scoreboard strong {color: #fff;}
+#score, #highscorePanel strong {color: #c9ff65;}
+.on-streak strong {color: #ffd477;}
+.arcade #pause, .arcade #endRun {
+  color: #f9f7ff;
+  background: #302d50;
+  border-color: #625c8c;
+}
+#endRun {padding: 6px 12px; font-size: 13px;}
+.round-progress {
+  display: block;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border: 0;
+  background: #343452;
+}
+.round-progress::-webkit-progress-bar {background: #343452;}
+.round-progress::-webkit-progress-value {background: #b8a5ff;}
+.round-progress::-moz-progress-bar {background: #b8a5ff;}
+.arena {
+  background:
+    radial-gradient(ellipse at 49% 15%, #37305f 0, transparent 62%),
+    radial-gradient(ellipse at 72% 100%, #282251 0, transparent 57%),
+    #14152a;
+  border-color: var(--arcade-line);
+}
+.arena::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(#c5b6ff40 1px, transparent 1px) 0 0 / 22px 22px;
+  pointer-events: none;
+}
+.lanes {display: none;}
+.has-lanes .lanes {
+  display: block;
+  position: absolute;
+  inset: 0 10px;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(20% - 1px), #a997fa35 calc(20% - 1px), #a997fa35 20%);
+  mask-image: linear-gradient(transparent, #000 45%);
+  pointer-events: none;
+}
+.stars {color: #b9a9ff8c;}
+.overlay {background: radial-gradient(ellipse, #262041e8, #17172db8 70%, #17172d24);}
+.overlay-label {font-size: 10px; font-weight: 850; letter-spacing: .19em; color: #c9ff65;}
+.overlay h2 {font-size: clamp(25px, 4vw, 40px);}
+.overlay p {color: #ded8f3;}
+.sample span, .word {color: var(--ink);}
+.sample span {box-shadow: 3px 4px #100d24, 0 0 16px #a384f55c;}
+.primary {color: var(--ink); box-shadow: 0 4px #72a63a; border-color: transparent;}
+.primary:not(:disabled):hover {filter: brightness(1.08);}
+.trail {height: 4px; background: #c9ff65;}
+.targets {background: #1d1c37;}
+.target {
+  color: #17182d;
+  border-top: 4px solid #fff9;
+  border-bottom: 3px solid #0003;
+  border-radius: 9px 9px 14px 14px;
+}
+.target:disabled {opacity: .76;}
+.target.ready {outline: 2px solid #fff; outline-offset: -6px; box-shadow: 0 0 14px var(--tint);}
+.target kbd {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  margin: 0 auto 2px;
+  height: 17px;
+  background: #17182d19;
+  border-radius: 4px;
+}
+.feedback {
+  color: #d8d2ec;
+  background: #1d1c37;
+  border-color: var(--arcade-line);
+  border-left: 4px solid #a497d2;
+}
+.feedback.good {color: #d8ffb3; border-left-color: #b9ee72;}
+.feedback.bad {color: #ffd1c2; border-left-color: #ffa88d;}
+.context, .route {color: var(--ink);}
+.settings {border-color: #ded5f5; box-shadow: 0 6px 0 #e9e2f9;}
+.settings-title {font-size: 20px; font-weight: 850; letter-spacing: -.035em; margin-bottom: 6px;}
+.settings .modes button[aria-pressed=true] .icon {background: #6248bd; color: #fff;}
+.settings [aria-pressed=true] {background: #e7dfff; border-color: #9a80e2;}
+@media (max-width: 480px) {
+  .arena {min-height: 330px;}
+  .overlay {gap: 8px;}
+  .sample span {padding: 7px 9px;}
+}

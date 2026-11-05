@@ -1,18 +1,20 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=9"><script defer src="./woerter.js?v=7"></script><script defer src="./spiel.js?v=9"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=10"><script defer src="./woerter.js?v=7"></script><script defer src="./spiel.js?v=10"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="guide">? <span>Spickzettel</span></button></div></header>
 <main>
 <section class="intro"><div class="eyebrow"><span></span> DEUTSCH · GRAMMATIK</div><h1>Wort<span>fall.</span></h1><p>Fünf Wortarten. Drei Spielmodi. Wie viele Wörter fängst du?</p></section>
 <div class="layout">
 <section class="arcade" aria-label="Spiel">
-<div class="scoreboard" id="scoreboard"><div><small>PUNKTE</small><strong id="score">000</strong></div><div><small>SERIE</small><strong id="streak">0</strong></div><div><small id="roundLabel">RUNDE</small><strong id="round">0 / 10</strong></div><div id="highscorePanel" hidden><small>HIGHSCORE</small><strong id="highscore">000</strong></div><button id="pause" disabled aria-label="Pausieren">Ⅱ</button></div>
+<div class="scoreboard" id="scoreboard"><div><small>PUNKTE</small><strong id="score">000</strong></div><div id="streakPanel"><small>SERIE</small><strong id="streak">0</strong></div><div><small id="roundLabel">RUNDE</small><strong id="round">0 / 10</strong></div><div id="highscorePanel" hidden><small>HIGHSCORE</small><strong id="highscore">000</strong></div><button id="pause" disabled aria-label="Pausieren">Ⅱ</button></div>
+<progress id="roundProgress" class="round-progress" value="0" max="10" aria-label="Bearbeitete Wörter"></progress>
 <div class="arena" id="arena">
+<div class="lanes" aria-hidden="true"></div>
 <div class="stars" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
 <div class="context" id="context" hidden></div>
 <div class="trail" id="trail" hidden></div><div id="word" class="word" hidden></div>
-<div id="overlay" class="overlay"><div class="sample" aria-hidden="true"><span>fliegen</span><span>Wolke</span><span>leise</span></div><h2 id="overlayTitle">Bereit zum Wortfang?</h2><p id="overlayText">Ordne fallende Wörter zu, bevor sie unten ankommen.</p><button class="primary" id="start">Spiel starten <span>→</span></button><button id="endRun" hidden>Endloslauf beenden</button></div>
+<div id="overlay" class="overlay"><div class="sample" aria-hidden="true"><span>fliegen</span><span>Wolke</span><span>leise</span></div><span class="overlay-label">✦ WORTFALL ARCADE</span><h2 id="overlayTitle">Bereit zum Wortfang?</h2><p id="overlayText">Ordne fallende Wörter zu, bevor sie unten ankommen.</p><button class="primary" id="start">Spiel starten <span>→</span></button><button id="endRun" hidden>Endloslauf beenden</button></div>
 <div class="route" id="route" hidden><div id="path"></div><strong id="question"></strong></div>
 <div class="particles" id="particles" aria-hidden="true"></div>
 </div>
@@ -20,6 +22,7 @@
 <div class="feedback" id="feedback" role="status">← → lenkt. Leertaste oder ↓ wirft sofort ein.</div>
 </section>
 <aside class="settings" aria-label="Spieleinstellungen">
+<div class="settings-title">Spiel einstellen</div>
 <div class="eyebrow">01 / SPIELMODUS</div>
 <div class="modes" id="modes">
 <button data-mode="catch" aria-pressed="true"><b class="icon">↓</b><span><strong>Korbfang</strong><small>Wörter in fünf Körbe sortieren</small></span></button>

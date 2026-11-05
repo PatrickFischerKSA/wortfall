@@ -6,6 +6,7 @@ let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = tru
 let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step = 0;
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
+let bestStreak = 0;
 const roundSize = 10;
 const endless = () => mode === 'endless';
 const highscoreKey = 'wortfall.endless.highscore';
@@ -77,6 +78,10 @@ function settings() {
 function stats() {
   ui.score.textContent = String(points).padStart(3,'0');
   ui.streak.textContent = streak;
+  $('streakPanel').classList.toggle('on-streak', streak >= 3);
+  const progress = $('roundProgress');
+  progress.hidden = endless();
+  progress.value = Math.min(roundSize, index + (state === 'feedback' ? 1 : 0));
   $('highscorePanel').hidden = !endless();
   $('scoreboard').classList.toggle('has-highscore', endless());
   if (endless()) updateHighscore();
@@ -90,6 +95,7 @@ function message(text, kind = '') {
   ui.feedback.className = ['feedback',kind].join(' ');
 }
 function targets() {
+  ui.arena.classList.toggle('has-lanes', usesBaskets());
   const active = state === 'playing';
   const labels = usesBaskets() ? classes : active ? stations[branch()[0]][1] : stations.change[1];
   const focused = ui.targets.contains(document.activeElement) ? [...ui.targets.children].indexOf(document.activeElement) : -1;
@@ -131,6 +137,7 @@ function idle() {
   stopMotion();
   dropAnimation?.cancel();
   state = 'idle'; index = points = streak = hits = 0;
+  bestStreak = 0;
   tempoStep = 0;
   speedHint();
   ui.word.style.background = '';
@@ -175,9 +182,14 @@ function start() {
     deck = shuffle(grouped.flat());
   }
   index = points = streak = hits = step = 0;
+  bestStreak = 0;
   tempoStep = 0;
   message(modeHint());
   nextCard();
+  const board = $('scoreboard').closest('.arcade');
+  if (board.getBoundingClientRect().bottom > window.innerHeight) {
+    board.scrollIntoView({block:'start', behavior:'instant'});
+  }
 }
 function nextCard() {
   if (!endless() && index === roundSize) { finish(); return; }
@@ -269,13 +281,15 @@ function answer(choice, fastDrop = false) {
   ui.trail.hidden = true;
   if (correct) {
     hits++; streak++;
+    bestStreak = Math.max(bestStreak, streak);
     const tempoBonus = speed ? tempoStep * 10 + (speed === 2 ? 30 : 0) : 0;
     const earned = 100 + Math.min(5,streak-1)*20 + tempoBonus;
     points += earned;
     const nextPace = adjustTempo(true);
     ui.word.style.background = tints[c.type];
     pop(); play(streak % 3 === 0 ? 'combo' : 'good');
-    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${nextPace}`,'good');
+    const milestone = [3, 5, 10].includes(streak) ? ` · ✦ ${streak} in Folge!` : '';
+    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${milestone}${nextPace}`,'good');
   } else {
     const lost = Math.min(points, 25);
     points -= lost;
@@ -300,9 +314,10 @@ function finish() {
   state = 'done'; ui.pause.disabled = true; stats();
   for (const el of [ui.word,ui.context,ui.route,ui.trail]) el.hidden = true;
   targets();
+  const summary = `${hits} von ${index} Wörtern richtig · ${points} Punkte · Beste Serie: ${bestStreak}`;
   if (endless()) {
-    overlay('Endloslauf beendet', `${hits} von ${index} Wörtern richtig · ${points} Punkte`, 'Neuer Endloslauf');
-  } else overlay('Runde geschafft!', `${hits} von ${roundSize} Wörtern richtig · ${points} Punkte`, 'Noch einmal spielen');
+    overlay('Endloslauf beendet', summary, 'Neuer Endloslauf');
+  } else overlay('Runde geschafft!', summary, 'Noch einmal spielen');
   ui.start.focus();
 }
 function pause(focus = false) {
