@@ -115,6 +115,7 @@ function start() {
   deck = shuffle(grouped.flat());
   index = points = streak = hits = step = 0;
   tempoStep = 0;
+  message(hint[mode]);
   nextCard();
 }
 function nextCard() {
@@ -129,7 +130,6 @@ function nextCard() {
     const mark = document.createElement('mark'); mark.textContent = c.word;
     ui.context.replaceChildren(before,mark,after);
   }
-  message(hint[mode]);
   showStage();
 }
 function showStage() {
@@ -155,14 +155,15 @@ function paint() {
   const fall = speed && mode === 'catch' ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
   if (drag === null) ui.word.style.top = `${top + fraction * distance}px`;
-  if (drag === null && mode === 'catch' && keyboardTarget >= 0) {
-    const basket = ui.targets.children[keyboardTarget].getBoundingClientRect();
-    const arena = ui.arena.getBoundingClientRect();
-    const half = ui.word.offsetWidth / 2;
-    const center = basket.left + basket.width / 2 - arena.left;
-    ui.word.style.left = Math.max(half, Math.min(arena.width - half, center)) + 'px';
-  }
   ui.trail.style.width = `${100*(1-progress)}%`;
+}
+function positionWordOverBasket() {
+  if (mode !== 'catch' || keyboardTarget < 0 || drag !== null) return;
+  const basket = ui.targets.children[keyboardTarget].getBoundingClientRect();
+  const arena = ui.arena.getBoundingClientRect();
+  const half = ui.word.offsetWidth / 2;
+  const center = basket.left + basket.width / 2 - arena.left;
+  ui.word.style.left = Math.max(half, Math.min(arena.width - half, center)) + 'px';
 }
 function tick(now) {
   if (state !== 'playing') return;
@@ -203,18 +204,21 @@ function answer(choice) {
     message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
   stats();
-  nextTimer = setTimeout(() => {
-    dropAnimation?.cancel();
-    ui.word.style.background = '';
-    index++; nextCard();
-  }, correct ? 1150 : 2850);
+  nextTimer = setTimeout(advanceAfterAnswer, correct ? 480 : 700);
+}
+function advanceAfterAnswer() {
+  if (state !== 'feedback') return;
+  clearTimeout(nextTimer);
+  dropAnimation?.cancel();
+  ui.word.style.background = '';
+  index++;
+  nextCard();
 }
 function finish() {
   state = 'done'; stats();
   for (const el of [ui.word,ui.context,ui.route,ui.trail]) el.hidden = true;
   targets();
   overlay('Runde geschafft!', `${hits} von ${roundSize} Wörtern richtig · ${points} Punkte`, 'Noch einmal spielen');
-  message(hits === roundSize ? 'Perfekte Runde! Probier ein höheres Niveau oder den Turbomodus.' : 'Wiederhole die Runde oder probier die andere Spielart.');
   ui.start.focus();
 }
 function pause(focus = false) {
@@ -317,9 +321,14 @@ ui.speeds.onclick = e => {
 document.addEventListener('keydown',e => {
   if (e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
   const direction = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
-  if (state === 'playing' && drag === null && (direction || e.key === 'ArrowDown')) {
+  if ((state === 'playing' || state === 'feedback') && drag === null && (direction || e.key === 'ArrowDown')) {
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
     e.preventDefault();
+    if (state === 'feedback') {
+      if (!direction || e.repeat) return;
+      advanceAfterAnswer();
+      if (state !== 'playing') return;
+    }
     const buttons = [...ui.targets.children];
     const focused = buttons.indexOf(document.activeElement);
     const selected = focused >= 0 ? focused : keyboardTarget;
@@ -329,7 +338,7 @@ document.addEventListener('keydown',e => {
         : (selected < 0 ? Math.floor(buttons.length / 2) : selected) + direction;
       keyboardTarget = Math.max(0, Math.min(buttons.length - 1, next));
       buttons[keyboardTarget].focus({preventScroll:true});
-      paint();
+      positionWordOverBasket();
     } else if (!e.repeat && selected >= 0) {
       answer(selected);
     }
@@ -338,6 +347,9 @@ document.addEventListener('keydown',e => {
   if (e.repeat) return;
   if (e.key === 'Escape') { if (state === 'playing') pause(true); else if (state === 'paused') resume(); }
   if (state === 'playing' && /^[1-5]$/.test(e.key) && Number(e.key)<=ui.targets.children.length) { e.preventDefault(); answer(Number(e.key)-1); }
+});
+window.addEventListener('resize', () => {
+  if (state === 'playing' || state === 'paused') positionWordOverBasket();
 });
 document.addEventListener('visibilitychange',() => { if (document.hidden) pause(); });
 settings(); idle();
