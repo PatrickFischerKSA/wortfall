@@ -5,10 +5,11 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = true, audio;
 let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step = 0;
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
+let keyboardTarget = -1;
 const roundSize = 10;
 const hint = {
-  catch: 'Korb anklicken, Wort hineinziehen oder 1–5 drücken.',
-  route: 'Wähle an jeder Weiche den passenden Weg. Tasten: 1 und 2.'
+  catch: '← → zum Lenken, ↓ zum Einwerfen. Auch mit 1–5, Klick oder Ziehen.',
+  route: '← → zum Wählen, ↓ zum Bestätigen. Auch mit 1, 2 oder Klick.'
 };
 const pace = [null, {base:8000, change:640}, {base:5000, change:480}];
 let tempoStep = 0;
@@ -83,7 +84,6 @@ function stopMotion() {
   clearTimeout(nextTimer);
   if (drag !== null && ui.word.hasPointerCapture(drag)) ui.word.releasePointerCapture(drag);
   drag = null;
-  ui.word.style.left = '50%';
   for (const b of ui.targets.children) b.classList.remove('ready');
 }
 function idle() {
@@ -133,6 +133,8 @@ function nextCard() {
   showStage();
 }
 function showStage() {
+  keyboardTarget = -1;
+  ui.word.style.left = '50%';
   state = 'playing'; elapsed = 0; last = 0;
   speedHint();
   ui.overlay.hidden = true; ui.word.hidden = false; ui.trail.hidden = !speed;
@@ -153,6 +155,13 @@ function paint() {
   const fall = speed && mode === 'catch' ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
   if (drag === null) ui.word.style.top = `${top + fraction * distance}px`;
+  if (drag === null && mode === 'catch' && keyboardTarget >= 0) {
+    const basket = ui.targets.children[keyboardTarget].getBoundingClientRect();
+    const arena = ui.arena.getBoundingClientRect();
+    const half = ui.word.offsetWidth / 2;
+    const center = basket.left + basket.width / 2 - arena.left;
+    ui.word.style.left = Math.max(half, Math.min(arena.width - half, center)) + 'px';
+  }
   ui.trail.style.width = `${100*(1-progress)}%`;
 }
 function tick(now) {
@@ -270,6 +279,7 @@ function dropTarget(x,y) {
 }
 ui.word.addEventListener('pointerdown',e => {
   if (state !== 'playing' || mode !== 'catch' || e.button !== 0 || drag !== null) return;
+  keyboardTarget = -1;
   drag = e.pointerId; ui.word.setPointerCapture(drag); e.preventDefault();
 });
 ui.word.addEventListener('pointermove',e => {
@@ -305,7 +315,27 @@ ui.speeds.onclick = e => {
   if (state === 'playing' || state === 'paused') { ui.trail.hidden = !speed; paint(); }
 };
 document.addEventListener('keydown',e => {
-  if (e.repeat || e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
+  if (e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
+  const direction = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+  if (state === 'playing' && drag === null && (direction || e.key === 'ArrowDown')) {
+    if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+    e.preventDefault();
+    const buttons = [...ui.targets.children];
+    const focused = buttons.indexOf(document.activeElement);
+    const selected = focused >= 0 ? focused : keyboardTarget;
+    if (direction) {
+      const next = selected < 0 && mode === 'route'
+        ? (direction < 0 ? 0 : 1)
+        : (selected < 0 ? Math.floor(buttons.length / 2) : selected) + direction;
+      keyboardTarget = Math.max(0, Math.min(buttons.length - 1, next));
+      buttons[keyboardTarget].focus({preventScroll:true});
+      paint();
+    } else if (!e.repeat && selected >= 0) {
+      answer(selected);
+    }
+    return;
+  }
+  if (e.repeat) return;
   if (e.key === 'Escape') { if (state === 'playing') pause(true); else if (state === 'paused') resume(); }
   if (state === 'playing' && /^[1-5]$/.test(e.key) && Number(e.key)<=ui.targets.children.length) { e.preventDefault(); answer(Number(e.key)-1); }
 });
