@@ -200,7 +200,7 @@ const stations = {
   change: ['Ist das Wort veränderbar?', ['Veränderbar', 'Unveränderbar']],
   form: ['Wie lässt sich das Wort verändern?', ['Konjugierbar', 'Deklinierbar']],
   gender: ['Welches Genus hat das Wort?', ['Festes Genus', 'Kein festes Genus']],
-  article: ['Artikelprobe: Passt es zwischen Artikel und Nomen?', ['Probe gelingt', 'Probe gelingt nicht']]
+  article: ['Passt das Wort zwischen einen Artikel und ein Nomen? Du darfst die Endung anpassen.', ['Ja, es passt', 'Nein, es passt nicht']]
 };
 const routes = [
   [['change',0],['form',1],['gender',0]],

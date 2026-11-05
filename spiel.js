@@ -222,7 +222,9 @@ function showStage() {
     delete $('junction').dataset.direction;
     const route = routes[card().type];
     ui.path.textContent = ['Start', ...route.slice(0,step).map(([key,i]) => stations[key][1][i])].join(' → ');
-    ui.question.textContent = stations[branch()[0]][0];
+    const [station] = branch();
+    ui.question.textContent = stations[station][0];
+    $('articleTip').hidden = station !== 'article';
   }
   targets(); stats(); paint(); frame = requestAnimationFrame(tick);
 }
