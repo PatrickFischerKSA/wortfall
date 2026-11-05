@@ -8,6 +8,31 @@ let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
 const roundSize = 10;
 const endless = () => mode === 'endless';
+const highscoreKey = 'wortfall.endless.highscore';
+let highscore = readHighscore();
+
+function readHighscore() {
+  try {
+    const saved = Number(localStorage.getItem(highscoreKey));
+    return Number.isSafeInteger(saved) && saved > 0 ? saved : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function updateHighscore() {
+  const previous = highscore;
+  highscore = Math.max(highscore, readHighscore(), points);
+  if (highscore > previous && highscore === points) {
+    try {
+      localStorage.setItem(highscoreKey, String(highscore));
+    } catch {
+      // Keep showing the record in this session if storage is unavailable.
+    }
+  }
+  $('highscore').textContent = String(highscore).padStart(3, '0');
+}
+
 const usesBaskets = () => mode !== 'route';
 const modeHint = () => hint[usesBaskets() ? 'catch' : 'route'];
 const hint = {
@@ -52,6 +77,9 @@ function settings() {
 function stats() {
   ui.score.textContent = String(points).padStart(3,'0');
   ui.streak.textContent = streak;
+  $('highscorePanel').hidden = !endless();
+  $('scoreboard').classList.toggle('has-highscore', endless());
+  if (endless()) updateHighscore();
   ui.roundLabel.textContent = endless() ? 'WÖRTER' : 'RUNDE';
   ui.round.textContent = endless()
     ? String(state === 'feedback' ? index + 1 : index)
