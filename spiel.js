@@ -1,12 +1,15 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['score','streak','round','pause','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','guide','help'].map(id => [id,$(id)]));
+const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','guide','help'].map(id => [id,$(id)]));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = true, audio;
 let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step = 0;
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
 const roundSize = 10;
+const endless = () => mode === 'endless';
+const usesBaskets = () => mode !== 'route';
+const modeHint = () => hint[usesBaskets() ? 'catch' : 'route'];
 const hint = {
   catch: '← → lenkt. Leertaste oder ↓ wirft sofort ein. Unten fällt das Wort von selbst in den Korb.',
   route: '← → zum Wählen, ↓ zum Bestätigen. Auch mit 1, 2 oder Klick.'
@@ -24,18 +27,18 @@ function adjustTempo(correct) {
   const before = tempoStep;
   if (speed) tempoStep = Math.max(-2, Math.min(5, tempoStep + (correct ? 1 : -1)));
   speedHint();
-  if (index === roundSize - 1 || before === tempoStep) return '';
+  if ((!endless() && index === roundSize - 1) || before === tempoStep) return '';
   return correct ? ' · Nächstes Wort schneller' : ' · Nächstes Wort langsamer';
 }
 
 function speedHint() {
-  const unit = mode === 'catch' ? 'Wort' : 'Weiche';
+  const unit = usesBaskets() ? 'Wort' : 'Weiche';
   const seconds = (duration() / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
   ui.speedHint.textContent = speed
     ? `${seconds} Sekunden pro ${unit}. Treffer erhöhen das Tempo, Fehler bremsen es.`
     : 'Entscheide in deinem eigenen Tempo.';
 }
-const card = () => deck[index];
+const card = () => deck[index % deck.length];
 const branch = () => routes[card().type][step];
 
 function setPressed(group, key, value) {
@@ -49,7 +52,10 @@ function settings() {
 function stats() {
   ui.score.textContent = String(points).padStart(3,'0');
   ui.streak.textContent = streak;
-  ui.round.textContent = `${state === 'idle' ? 0 : Math.min(index + 1, roundSize)} / ${roundSize}`;
+  ui.roundLabel.textContent = endless() ? 'WÖRTER' : 'RUNDE';
+  ui.round.textContent = endless()
+    ? String(state === 'feedback' ? index + 1 : index)
+    : `${state === 'idle' ? 0 : Math.min(index + 1, roundSize)} / ${roundSize}`;
 }
 function message(text, kind = '') {
   ui.feedback.textContent = text;
@@ -57,12 +63,12 @@ function message(text, kind = '') {
 }
 function targets() {
   const active = state === 'playing';
-  const labels = mode === 'catch' ? classes : active ? stations[branch()[0]][1] : stations.change[1];
+  const labels = usesBaskets() ? classes : active ? stations[branch()[0]][1] : stations.change[1];
   const focused = ui.targets.contains(document.activeElement) ? [...ui.targets.children].indexOf(document.activeElement) : -1;
   ui.targets.replaceChildren(...labels.map((name, i) => {
     const b = document.createElement('button');
     b.className = 'target';
-    b.style.setProperty('--tint', mode === 'catch' ? tints[i] : ['#d8c9ff','#bde6ff'][i]);
+    b.style.setProperty('--tint', usesBaskets() ? tints[i] : ['#d8c9ff','#bde6ff'][i]);
     b.disabled = !active;
     const kbd = document.createElement('kbd');
     kbd.textContent = i+1; kbd.setAttribute('aria-hidden','true');
@@ -71,7 +77,7 @@ function targets() {
     return b;
   }));
   if (active && mode === 'route' && focused >= 0) ui.targets.children[Math.min(focused, labels.length-1)].focus();
-  if (active && mode === 'catch') markBasket(keyboardTarget < 0 ? 2 : keyboardTarget);
+  if (active && usesBaskets()) markBasket(keyboardTarget < 0 ? 2 : keyboardTarget);
 }
 function markBasket(choice) {
   [...ui.targets.children].forEach((basket, index) => {
@@ -80,6 +86,7 @@ function markBasket(choice) {
 }
 function overlay(title, body, action) {
   ui.overlay.hidden = false;
+  ui.endRun.hidden = !endless() || state !== 'paused';
   ui.overlayTitle.textContent = title;
   ui.overlayText.textContent = body;
   ui.start.replaceChildren(document.createTextNode(action+' '));
@@ -102,8 +109,10 @@ function idle() {
 
   ui.pause.disabled = true;
   for (const el of [ui.word,ui.context,ui.route,ui.trail]) el.hidden = true;
-  overlay(mode === 'catch' ? 'Bereit zum Wortfang?' : 'Bereit für die Wortweiche?', mode === 'catch' ? 'Ordne fallende Wörter zu, bevor sie unten ankommen.' : 'Prüfe jedes Wort Schritt für Schritt und leite es zur richtigen Wortart.', 'Spiel starten');
-  message(hint[mode]); targets(); stats();
+  if (endless()) {
+    overlay('Bereit für den Endloslauf?', 'Fange Wörter, solange du willst. Über Pause kannst du den Lauf beenden.', 'Endloslauf starten');
+  } else overlay(usesBaskets() ? 'Bereit zum Wortfang?' : 'Bereit für die Wortweiche?', usesBaskets() ? 'Ordne fallende Wörter zu, bevor sie unten ankommen.' : 'Prüfe jedes Wort Schritt für Schritt und leite es zur richtigen Wortart.', 'Spiel starten');
+  message(modeHint()); targets(); stats();
 }
 function shuffle(items) {
   const result = [...items];
@@ -113,23 +122,42 @@ function shuffle(items) {
   }
   return result;
 }
+function endlessDeck(previous = []) {
+  const wordKey = card => card.word.toLocaleLowerCase('de-CH');
+  const recent = new Set(previous.slice(-30).map(wordKey));
+  const seen = new Set();
+  const fresh = [], deferred = [];
+  for (const card of shuffle(vocabulary[level])) {
+    const key = wordKey(card);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    (recent.has(key) ? deferred : fresh).push(card);
+  }
+  return [...fresh, ...deferred];
+}
+
 function start() {
   initAudio();
   if (state === 'paused') { resume(); return; }
-  const bank = vocabulary[level];
-  const grouped = classes.map((_,type) => shuffle(bank.filter(c => c.type === type)).slice(0,2));
-  deck = shuffle(grouped.flat());
+  if (endless()) {
+    deck = endlessDeck();
+  } else {
+    const bank = vocabulary[level];
+    const grouped = classes.map((_,type) => shuffle(bank.filter(c => c.type === type)).slice(0,2));
+    deck = shuffle(grouped.flat());
+  }
   index = points = streak = hits = step = 0;
   tempoStep = 0;
-  message(hint[mode]);
+  message(modeHint());
   nextCard();
 }
 function nextCard() {
-  if (index === roundSize) { finish(); return; }
+  if (!endless() && index === roundSize) { finish(); return; }
+  if (endless() && index > 0 && index % deck.length === 0) deck = endlessDeck(deck);
   step = 0;
   const c = card();
   ui.word.textContent = c.word;
-  ui.word.style.cursor = mode === 'catch' ? 'grab' : 'default';
+  ui.word.style.cursor = usesBaskets() ? 'grab' : 'default';
   ui.context.hidden = !c.sentence;
   if (c.sentence) {
     const [before,after] = c.sentence.split('*');
@@ -158,13 +186,13 @@ function paint() {
   const top = ui.context.hidden ? 12 : ui.context.offsetHeight + 18;
   const bottom = mode === 'route' ? ui.route.offsetHeight + 19 : 10;
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
-  const fall = speed && mode === 'catch' ? progress * (.55 + .45 * progress) : progress;
+  const fall = speed && usesBaskets() ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
   if (drag === null) ui.word.style.top = `${top + fraction * distance}px`;
   ui.trail.style.width = `${100*(1-progress)}%`;
 }
 function positionWordOverBasket() {
-  if (mode !== 'catch' || keyboardTarget < 0 || drag !== null) return;
+  if (!usesBaskets() || keyboardTarget < 0 || drag !== null) return;
   const basket = ui.targets.children[keyboardTarget].getBoundingClientRect();
   const arena = ui.arena.getBoundingClientRect();
   const half = ui.word.offsetWidth / 2;
@@ -192,7 +220,7 @@ function tick(now) {
   if (last) elapsed += now-last;
   last = now; paint();
   if (elapsed >= duration()) {
-    if (mode === 'catch') answer(basketBelowWord(), true);
+    if (usesBaskets()) answer(basketBelowWord(), true);
     else answer(-1);
     return;
   }
@@ -201,7 +229,7 @@ function tick(now) {
 function answer(choice, fastDrop = false) {
   if (state !== 'playing') return;
   const c = card();
-  const expected = mode === 'catch' ? c.type : branch()[1];
+  const expected = usesBaskets() ? c.type : branch()[1];
   const correct = choice === expected;
   stopMotion();
   if (correct && mode === 'route' && step + 1 < routes[c.type].length) {
@@ -228,7 +256,7 @@ function answer(choice, fastDrop = false) {
     const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
     message(`${choice < 0 ? 'Zeit abgelaufen.' : 'Noch nicht richtig.'}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
-  if (mode === 'catch') sink(choice, fastDrop);
+  if (usesBaskets()) sink(choice, fastDrop);
   stats();
   nextTimer = setTimeout(advanceAfterAnswer, correct ? 480 : 700);
 }
@@ -241,10 +269,12 @@ function advanceAfterAnswer() {
   nextCard();
 }
 function finish() {
-  state = 'done'; stats();
+  state = 'done'; ui.pause.disabled = true; stats();
   for (const el of [ui.word,ui.context,ui.route,ui.trail]) el.hidden = true;
   targets();
-  overlay('Runde geschafft!', `${hits} von ${roundSize} Wörtern richtig · ${points} Punkte`, 'Noch einmal spielen');
+  if (endless()) {
+    overlay('Endloslauf beendet', `${hits} von ${index} Wörtern richtig · ${points} Punkte`, 'Neuer Endloslauf');
+  } else overlay('Runde geschafft!', `${hits} von ${roundSize} Wörtern richtig · ${points} Punkte`, 'Noch einmal spielen');
   ui.start.focus();
 }
 function pause(focus = false) {
@@ -311,7 +341,7 @@ function dropTarget(x,y) {
   });
 }
 ui.word.addEventListener('pointerdown',e => {
-  if (state !== 'playing' || mode !== 'catch' || e.button !== 0 || drag !== null) return;
+  if (state !== 'playing' || !usesBaskets() || e.button !== 0 || drag !== null) return;
   keyboardTarget = -1;
   drag = e.pointerId; ui.word.setPointerCapture(drag); e.preventDefault();
 });
@@ -331,6 +361,7 @@ ui.word.addEventListener('pointerup',e => {
 });
 ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) { drag=null; ui.word.style.left='50%'; markBasket(2); } });
 ui.start.onclick = start;
+ui.endRun.onclick = () => { if (endless() && state === 'paused') finish(); };
 ui.pause.onclick = () => state === 'paused' ? resume() : pause(true);
 ui.sound.onclick = () => { sound = !sound; ui.sound.setAttribute('aria-pressed',String(sound)); if (sound) { initAudio(); play('step'); } };
 ui.guide.onclick = () => { pause(); ui.help.showModal(); };
@@ -349,7 +380,7 @@ ui.speeds.onclick = e => {
 document.addEventListener('keydown',e => {
   if (e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
   const direction = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
-  const drop = mode === 'catch' && (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowDown');
+  const drop = usesBaskets() && (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowDown');
   if ((state === 'playing' || state === 'feedback') && drag === null && (direction || drop || e.key === 'ArrowDown')) {
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
     e.preventDefault();
