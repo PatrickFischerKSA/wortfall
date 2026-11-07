@@ -23,7 +23,7 @@ const starterVocabulary = [
     ['freundlich|Sie grüssen *.|die freundlichen Leute', 'besser|Das klingt *.|die bessere Lösung', 'mündlich|Die Prüfung ist *.|die mündliche Prüfung', 'leise|Wir gehen * hinaus.|die leisen Schritte', 'grüner|Dort wächst ein * Busch.|der grüne Busch', 'schnell|Sie läuft *.|die schnelle Läuferin',
       "denkwürdiges|Das war ein * Ereignis.|das denkwürdige Ereignis", "tadellos|Sie sang *.|der tadellose Gesang", "nützlich|Das Werkzeug ist *.|das nützliche Werkzeug", "äusserste|Sie sah die * Kante.|die äusserste Kante", "zufrieden|Er war mit dem Ergebnis *.|der zufriedene Teilnehmer", "unversehrt|Das Paket kam * an.|das unversehrte Paket"],
     ['eine|Wir sehen * Katze.|unbestimmter Artikel', 'das|Ich öffne * Fenster.|bestimmter Artikel', 'mein|Wo ist * Heft?|Possessivpronomen; mein Heft, meine Tasche', 'dieser|* Bus hält hier.|Demonstrativpronomen; dieser Bus, diese Bahn', 'wem|* gehört der Stift?|Fragepronomen; wer, wem, wen', 'welche|* Tür ist offen?|Fragepronomen; welcher, welche, welches',
-      "dessen|Der Baum, * Äste abbrechen, ist morsch.|Relativpronomen im Genitiv", "kein|Heute fährt * Zug.|Negativartikel im Fünf-Wortarten-Modell", "jenes|Wir besuchen * Museum.|Demonstrativpronomen", "derselbe|Es war * Fahrer wie gestern.|Demonstrativpronomen", "einander|Sie helfen * beim Umzug.|Reziprokpronomen", "sich|Die Katze putzt *.|Reflexivpronomen"],
+      "dessen|Der Baum, * Äste abbrechen, ist morsch.|Relativpronomen im Genitiv", "kein|Heute fährt * Zug.|Indefinitpronomen nach der Vorlage", "jenes|Wir besuchen * Museum.|Demonstrativpronomen", "derselbe|Es war * Fahrer wie gestern.|Demonstrativpronomen", "einander|Sie helfen * beim Umzug.|Reflexivpronomen mit gegenseitiger Bedeutung", "sich|Die Katze putzt *.|Reflexivpronomen"],
     ['obwohl|Ich gehe, * es regnet.|unveränderbare Konjunktion', 'auf|Das Buch liegt * dem Tisch.|unveränderbare Präposition', 'dort|Wir treffen uns *.|unveränderbares Adverb', 'sehr|Das freut mich *.|unveränderbares Gradwort', 'als|Ich war schon da, * du kamst.|unveränderbare Konjunktion', 'zu|Es beginnt * schneien.|unveränderbarer Infinitivmarker',
       "dennoch|Es regnete, * gingen wir hinaus.|unveränderbares Adverb", "trotz|* der Kälte gingen wir baden.|unveränderbare Präposition", "sobald|Ruf mich an, * du da bist.|unveränderbare Konjunktion", "bloss|Was soll ich * tun?|unveränderbare Modalpartikel", "hingegen|Am Dienstag * hat das Museum offen.|unveränderbares Adverb", "ausserhalb|Wir wohnen * der Stadt.|unveränderbare Präposition"]
   ],
@@ -116,7 +116,7 @@ const shortWordGroups = [
   [
     'diesem|Mit * Werkzeug geht es leichter.|Demonstrativpronomen im Dativ',
     'einen|Sie hat * Hund gesehen.|Unbestimmter Artikel im Akkusativ',
-    'keinem|Wir haben * Menschen davon erzählt.|Negativartikel im Dativ',
+    'keinem|Wir haben * Menschen davon erzählt.|Indefinitpronomen im Dativ',
     'einer|Sie half * Nachbarin.|Unbestimmter Artikel im Dativ',
     'solche|* Fragen höre ich oft.|Demonstrativpronomen: solche Fragen, solcher Lärm',
     'jedem|Er gab * Kind einen Apfel.|Indefinitpronomen im Dativ',
@@ -216,7 +216,7 @@ const tenClasses = ['Nomen', 'Verb', 'Adjektiv', 'Pronomen', 'Artikel', 'Numeral
 const tenShortLabels = ['Nom.', 'Verb', 'Adj.', 'Pron.', 'Art.', 'Num.', 'Adv.', 'Präp.', 'Konj.', 'Int.'];
 const tenTints = [...tints, '#ffe4a9', '#a5f7ec', '#e2b8ff', '#ffb6dd', '#d5f58f'];
 const adjectiveUses = ['Attributiv', 'Prädikativ', 'Adverbial'];
-const pronounKinds = ['Personalpronomen', 'Possessivpronomen', 'Reflexivpronomen', 'Demonstrativpronomen', 'Relativpronomen', 'Interrogativpronomen', 'Indefinitpronomen', 'Reziprokpronomen'];
+const pronounKinds = ['Personalpronomen', 'Reflexivpronomen', 'Possessivpronomen', 'Demonstrativpronomen', 'Relativpronomen', 'Interrogativpronomen', 'Indefinitpronomen'];
 
 const tenExamples = [
   [
@@ -245,10 +245,10 @@ const tenExamples = [
   [
     'ihm|Wir helfen * beim Umzug.|0|«Ihm» steht für eine Person im Dativ',
     'sie|Heute kommen * mit dem Zug.|0|«Sie» steht hier für mehrere Personen',
-    'mein|Wo liegt * Heft?|1|«Mein» drückt aus, wem das Heft gehört',
-    'ihren|Sie rief * Bruder an.|1|«Ihren» bezeichnet hier eine Zugehörigkeit',
-    'sich|Die Katze putzt *.|2|«Sich» bezieht sich auf das Subjekt «die Katze» zurück',
-    'mich|Ich freue * auf morgen.|2|«Mich» bezieht sich hier auf das Subjekt «ich» zurück',
+    'mein|Wo liegt * Heft?|2|«Mein» drückt aus, wem das Heft gehört',
+    'ihren|Sie rief * Bruder an.|2|«Ihren» bezeichnet hier eine Zugehörigkeit',
+    'sich|Die Katze putzt *.|1|«Sich» bezieht sich auf das Subjekt «die Katze» zurück',
+    'mich|Ich freue * auf morgen.|1|«Mich» bezieht sich hier auf das Subjekt «ich» zurück',
     'dieser|* Weg führt zum Bahnhof.|3|«Dieser» weist auf einen bestimmten Weg hin',
     'jene|Ich meine * dort hinten.|3|«Jene» weist auf eine bestimmte Person oder Sache hin',
     'deren|Die Autorin, * Buch wir lesen, kommt heute.|4|«Deren» leitet einen Relativsatz ein und bezieht sich auf «Autorin»',
@@ -257,7 +257,8 @@ const tenExamples = [
     'welches|* Buch möchtest du lesen?|5|«Welches» fragt nach einer Auswahl',
     'niemand|Heute war * im Büro.|6|«Niemand» bezeichnet eine unbestimmte Menge von null Personen',
     'jemand|Hat * geklopft?|6|«Jemand» steht für eine unbestimmte Person',
-    'einander|Die Nachbarn helfen *.|7|«Einander» drückt aus, dass die Hilfe gegenseitig ist'
+    'kein|Heute fährt * Zug.|6|«Kein» gehört nach der Vorlage zu den Indefinitpronomen',
+    'einander|Die Nachbarn helfen *.|1|«Einander» ist hier ein Reflexivpronomen mit gegenseitiger Bedeutung'
   ],
   [
     'das|Ich öffne * Fenster.|«Das» steht vor einem Nomen und bestimmt es',
