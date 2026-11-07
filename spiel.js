@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','guide','help'].map(id => [id,$(id)]));
+const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','music','musicToggle','guide','help'].map(id => [id,$(id)]));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = true, audio;
 let soundBus, clapNoise;
@@ -23,6 +23,12 @@ const refinements = {
     labels: pronounKinds,
     short: pronounKinds.map(kind => kind.replace('pronomen', '')),
     question: 'Zu welcher Gruppe gehört das Pronomen?'
+  },
+  8: {
+    control: $('conjunctionModule'),
+    labels: conjunctionKinds,
+    short: conjunctionKinds,
+    question: 'Verbindet die Konjunktion Gleichrangiges oder leitet sie einen Nebensatz ein?'
   }
 };
 function refinementFor(type) {
@@ -145,7 +151,7 @@ function setPressed(group, key, value) {
 }
 function settings() {
   setPressed(ui.modes,'mode',mode); setPressed(ui.levels,'level',level); setPressed(ui.speeds,'speed',speed);
-  ui.levelHint.textContent = ['Klare Fälle aus dem Alltag.', 'Gebeugte Formen und Wörter im Satz.', 'Grenzfälle, Nominalisierungen und Zahladjektive.', 'Zehn Wortarten, Pronomenarten und Adjektivgebrauch.'][level];
+  ui.levelHint.textContent = ['Klare Fälle aus dem Alltag.', 'Gebeugte Formen und Wörter im Satz.', 'Grenzfälle, Nominalisierungen und Zahladjektive.', 'Zehn Wortarten mit zuschaltbaren Vertiefungen.'][level];
   speedHint();
 }
 function stats() {
@@ -265,8 +271,15 @@ function endlessDeck(previous = []) {
   return [...fresh, ...deferred];
 }
 
+function playMusic() {
+  if (ui.music.muted || !ui.music.paused) return;
+  ui.music.volume = 0.35;
+  ui.music.play().catch(() => {});
+}
+
 function start() {
   initAudio();
+  playMusic();
   if (state === 'paused') { resume(); return; }
   if (endless()) {
     deck = endlessDeck();
@@ -634,6 +647,11 @@ ui.sound.onclick = () => {
   ui.sound.setAttribute('aria-pressed', String(sound));
   if (soundBus) soundBus.gain.value = sound ? 1 : 0;
   if (sound) { initAudio(); play('step'); }
+};
+ui.musicToggle.onclick = () => {
+  ui.music.muted = !ui.music.muted;
+  ui.musicToggle.setAttribute('aria-pressed', String(!ui.music.muted));
+  if (!ui.music.muted) playMusic();
 };
 ui.guide.onclick = () => { pause(); ui.help.showModal(); };
 ui.effects.onchange = () => {

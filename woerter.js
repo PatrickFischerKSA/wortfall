@@ -215,6 +215,7 @@ const routes = [
 const tenClasses = ['Nomen', 'Verb', 'Adjektiv', 'Pronomen', 'Artikel', 'Numerale', 'Adverb', 'Präposition', 'Konjunktion', 'Interjektion'];
 const tenShortLabels = ['Nom.', 'Verb', 'Adj.', 'Pron.', 'Art.', 'Num.', 'Adv.', 'Präp.', 'Konj.', 'Int.'];
 const tenTints = [...tints, '#ffe4a9', '#a5f7ec', '#e2b8ff', '#ffb6dd', '#d5f58f'];
+const conjunctionKinds = ['Nebenordnend', 'Unterordnend'];
 const adjectiveUses = ['Attributiv', 'Prädikativ', 'Adverbial'];
 const pronounKinds = ['Personalpronomen', 'Reflexivpronomen', 'Possessivpronomen', 'Demonstrativpronomen', 'Relativpronomen', 'Interrogativpronomen', 'Indefinitpronomen'];
 
@@ -289,11 +290,11 @@ const tenExamples = [
     'wegen|* der Hitze blieb das Fenster offen.|«Wegen» leitet die Wortgruppe «der Hitze» ein'
   ],
   [
-    'während|Er las, * sie schlief.|«Während» leitet hier einen Nebensatz ein',
-    'weil|Er blieb zu Hause, * er krank war.|«Weil» leitet einen Nebensatz ein',
-    'und|Mia * Leo warten draussen.|«Und» verbindet zwei gleichrangige Namen',
-    'obwohl|Sie ging hinaus, * es schneite.|«Obwohl» leitet einen Nebensatz ein',
-    'aber|Es regnet, * wir gehen hinaus.|«Aber» verbindet zwei gleichrangige Hauptsätze'
+    'während|Er las, * sie schlief.|1|«Während» leitet hier einen Nebensatz ein',
+    'weil|Er blieb zu Hause, * er krank war.|1|«Weil» leitet einen Nebensatz ein',
+    'und|Mia * Leo warten draussen.|0|«Und» verbindet zwei gleichrangige Namen',
+    'obwohl|Sie ging hinaus, * es schneite.|1|«Obwohl» leitet einen Nebensatz ein',
+    'aber|Es regnet, * wir gehen hinaus.|0|«Aber» verbindet zwei gleichrangige Hauptsätze'
   ],
   [
     'Aua|*, das tut weh!|«Aua» ist ein selbstständiger Ausruf',

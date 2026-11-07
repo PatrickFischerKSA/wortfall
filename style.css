@@ -392,3 +392,9 @@ dialog {background: #291538;}
 
 .grammar-modules label {justify-content: flex-start; align-items: center; padding-block: 3px;}
 .grammar-modules input {width: auto;}
+
+@media (max-width: 400px) {
+  .tools {gap: 5px;}
+  .tools button {padding-inline: 7px;}
+  #guide span {display: none;}
+}
