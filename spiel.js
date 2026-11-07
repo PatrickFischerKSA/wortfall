@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','music','musicToggle','guide','help'].map(id => [id,$(id)]));
+const ui = Object.fromEntries(['score','streak','round','roundLabel','pause','endRun','arena','context','trail','word','overlay','overlayTitle','overlayText','start','route','path','question','particles','targets','feedback','modes','levels','speeds','levelHint','speedHint','effects','sound','music','musicToggle','musicVolume','musicVolumeValue','guide','help'].map(id => [id,$(id)]));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let mode = 'catch', level = 0, speed = reduceMotion.matches ? 0 : 1, sound = true, audio;
 let soundBus, clapNoise;
@@ -273,7 +273,6 @@ function endlessDeck(previous = []) {
 
 function playMusic() {
   if (ui.music.muted || !ui.music.paused) return;
-  ui.music.volume = 0.35;
   ui.music.play().catch(() => {});
 }
 
@@ -648,6 +647,12 @@ ui.sound.onclick = () => {
   if (soundBus) soundBus.gain.value = sound ? 1 : 0;
   if (sound) { initAudio(); play('step'); }
 };
+function updateMusicVolume() {
+  ui.music.volume = ui.musicVolume.valueAsNumber / 100;
+  ui.musicVolumeValue.textContent = `${ui.musicVolume.value} %`;
+}
+ui.musicVolume.addEventListener('input', updateMusicVolume);
+updateMusicVolume();
 ui.musicToggle.onclick = () => {
   ui.music.muted = !ui.music.muted;
   ui.musicToggle.setAttribute('aria-pressed', String(!ui.music.muted));

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=23"><script defer src="./woerter.js?v=22"></script><script defer src="./spiel.js?v=23"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=23"><script defer src="./woerter.js?v=22"></script><script defer src="./spiel.js?v=24"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="musicToggle" type="button" aria-label="Hintergrundmusik" aria-pressed="true">Musik</button><button id="guide" aria-label="Spickzettel">? <span>Spickzettel</span></button></div></header>
 <audio id="music" src="./audio/wortarten-rap.mp3" loop preload="none"></audio>
@@ -81,6 +81,11 @@
   <label for="fallLimit">Kürzeste Fallzeit <output id="fallLimitValue" for="fallLimit">0.7 s</output></label>
   <input type="range" id="fallLimit" min="0.7" max="8" step="0.1" value="0.7" aria-describedby="fallLimitHint">
   <small id="fallLimitHint">Mehr Sekunden begrenzen das maximale Falltempo.</small>
+</fieldset>
+<fieldset class="pace-controls">
+  <legend>Musik</legend>
+  <label for="musicVolume">Musiklautstärke <output id="musicVolumeValue" for="musicVolume">15 %</output></label>
+  <input id="musicVolume" type="range" min="0" max="100" step="1" value="15">
 </fieldset>
 <div class="effects"><label for="effects">Sichtbare Effekte</label><input type="checkbox" id="effects" checked></div>
 </aside>
