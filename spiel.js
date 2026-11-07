@@ -44,27 +44,44 @@ const hint = {
 const switchTravelTime = 360;
 let switchSelectedAt = 0;
 const pace = [0, 6300, 3900];
+const acceleration = $('acceleration');
+const fallLimit = $('fallLimit');
 let tempoStep = 0;
+let displayedDuration;
+const startingTime = () => pace[speed] + (mode === 'route' ? 800 : 0);
+const minimumTime = () => Number(fallLimit.value) * 1000;
+const tempoFactor = () => 1 - Number(acceleration.value) / 100;
+
+function fastestStep() {
+  if (!speed || tempoFactor() === 1 || minimumTime() >= startingTime()) return 0;
+  return Math.ceil(Math.log(minimumTime() / startingTime()) / Math.log(tempoFactor()));
+}
+
 function duration() {
   if (!speed) return Infinity;
-  const allowance = mode === 'route' ? 800 : 0;
-  return Math.round((pace[speed] + allowance) * .82 ** tempoStep);
+  return Math.round(Math.max(minimumTime(), startingTime() * tempoFactor() ** tempoStep));
 }
 
 function adjustTempo(correct) {
-  const before = tempoStep;
-  if (speed) tempoStep = Math.max(-2, Math.min(9, tempoStep + (correct ? 1 : -1)));
+  const before = duration();
+  if (speed && Number(acceleration.value)) {
+    tempoStep = Math.max(-2, Math.min(fastestStep(), tempoStep + (correct ? 1 : -1)));
+  }
   speedHint();
-  if ((!endless() && index === roundSize - 1) || before === tempoStep) return '';
+  if ((!endless() && index === roundSize - 1) || before === duration()) return '';
   return correct ? ' · Nächstes Wort schneller' : ' · Nächstes Wort langsamer';
 }
 
 function speedHint() {
   const unit = usesBaskets() ? 'Wort' : 'Weiche';
-  const seconds = (duration() / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
+  displayedDuration = duration();
+  const seconds = (displayedDuration / 1000).toLocaleString('de-DE', {maximumFractionDigits:1});
   $('liveTempo').textContent = speed ? `${seconds} s pro ${unit}` : 'Ohne Uhr';
+  $('accelerationValue').textContent = `${acceleration.value} %`;
+  $('fallLimitValue').textContent = `${Number(fallLimit.value).toLocaleString('de-CH')} s`;
+  $('paceControls').disabled = !speed;
   ui.speedHint.textContent = speed
-    ? `${seconds} Sekunden pro ${unit}. Treffer erhöhen das Tempo, Fehler bremsen es.`
+    ? `${seconds} Sekunden pro ${unit}. ${Number(acceleration.value) ? 'Treffer beschleunigen, Fehler bremsen.' : 'Konstantes Tempo.'}`
     : 'Entscheide in deinem eigenen Tempo.';
 }
 const card = () => deck[index % deck.length];
@@ -314,7 +331,7 @@ function answer(choice, fastDrop = false) {
   if (correct) {
     hits++; streak++;
     bestStreak = Math.max(bestStreak, streak);
-    const tempoBonus = speed ? tempoStep * 10 + (speed === 2 ? 30 : 0) : 0;
+    const tempoBonus = speed ? Math.min(9, tempoStep) * 10 + (speed === 2 ? 30 : 0) : 0;
     const earned = 100 + Math.min(5,streak-1)*20 + tempoBonus;
     points += earned;
     const nextPace = adjustTempo(true);
@@ -532,11 +549,22 @@ ui.speeds.onclick = e => {
   const fraction = state === 'playing' || state === 'paused'
     ? speed ? elapsed / duration() : 0
     : 0;
-  speed = Number(b.dataset.speed); elapsed = speed ? fraction * duration() : 0;
-  switchSelectedAt = elapsed;
+  speed = Number(b.dataset.speed);
+  retime(fraction);
+};
+function retime(fraction) {
+  const steeringAge = elapsed - switchSelectedAt;
+  tempoStep = Number(acceleration.value) ? Math.min(tempoStep, fastestStep()) : 0;
+  elapsed = speed ? fraction * duration() : 0;
+  switchSelectedAt = elapsed - steeringAge;
   settings();
   if (state === 'playing' || state === 'paused') { ui.trail.hidden = !speed; paint(); }
-};
+}
+for (const control of [acceleration, fallLimit]) {
+  control.addEventListener('input', () => {
+    retime(elapsed / displayedDuration);
+  });
+}
 document.addEventListener('keydown',e => {
   if (e.altKey || e.ctrlKey || e.metaKey || ui.help.open) return;
   const direction = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;

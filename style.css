@@ -353,3 +353,25 @@ dialog {background: #291538;}
   from {transform: translate(-50%, -50%) scale(.15); opacity: .95;}
   to {transform: translate(-50%, -50%) scale(3); opacity: 0;}
 }
+
+.pace-controls {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #694785;
+  border-radius: 10px;
+}
+.pace-controls legend {padding-inline: 5px; font-size: 13px; font-weight: 750;}
+.pace-controls label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pace-controls output {color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums;}
+.pace-controls input {width: 100%; margin: 0; accent-color: #e9a9ff;}
+.pace-controls small {letter-spacing: 0; color: var(--muted); font-weight: 500; margin-bottom: 5px;}
+.pace-controls:disabled {opacity: .62;}

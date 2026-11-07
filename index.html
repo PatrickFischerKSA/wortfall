@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=16"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=17"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=18"><script defer src="./woerter.js?v=15"></script><script defer src="./spiel.js?v=18"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="guide">? <span>Spickzettel</span></button></div></header>
 <main>
@@ -65,6 +65,15 @@
 <div class="eyebrow">03 / TEMPO</div>
 <div class="segments" id="speeds"><button data-speed="0" aria-pressed="false">Ohne Uhr</button><button data-speed="1" aria-pressed="true">Normal</button><button data-speed="2" aria-pressed="false">Turbo</button></div>
 <p id="speedHint">6,3 Sekunden pro Wort. Treffer erhöhen das Tempo, Fehler bremsen es.</p>
+<fieldset id="paceControls" class="pace-controls">
+  <legend>Tempo anpassen</legend>
+  <label for="acceleration">Beschleunigung pro Treffer <output id="accelerationValue" for="acceleration">18 %</output></label>
+  <input type="range" id="acceleration" min="0" max="30" value="18" aria-describedby="accelerationHint">
+  <small id="accelerationHint">Um so viel verkürzt sich die Fallzeit. Bei 0 % bleibt sie konstant.</small>
+  <label for="fallLimit">Kürzeste Fallzeit <output id="fallLimitValue" for="fallLimit">0.7 s</output></label>
+  <input type="range" id="fallLimit" min="0.7" max="8" step="0.1" value="0.7" aria-describedby="fallLimitHint">
+  <small id="fallLimitHint">Mehr Sekunden begrenzen das maximale Falltempo.</small>
+</fieldset>
 <div class="effects"><label for="effects">Sichtbare Effekte</label><input type="checkbox" id="effects" checked></div>
 </aside>
 </div>
