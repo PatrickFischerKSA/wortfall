@@ -8,7 +8,13 @@ let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
 let bestStreak = 0;
-const roundSize = 10;
+const advanced = () => level === 3;
+const activeClasses = () => advanced() ? tenClasses : classes;
+const activeTints = () => advanced() ? tenTints : tints;
+const roundSize = () => advanced() ? 27 : 10;
+let refining = false;
+let decisions = [];
+const defaultBasket = () => advanced() ? 5 : 2;
 const endless = () => mode === 'endless';
 const highscoreKey = 'wortfall.endless.highscore';
 let highscore = readHighscore();
@@ -35,8 +41,10 @@ function updateHighscore() {
   $('highscore').textContent = String(highscore).padStart(3, '0');
 }
 
-const usesBaskets = () => mode !== 'route';
-const modeHint = () => hint[usesBaskets() ? 'catch' : 'route'];
+const usesBaskets = () => mode !== 'route' && !refining;
+const modeHint = () => usesBaskets() && advanced()
+  ? '← und → lenken, die Leertaste wirft ein. Die Tasten 1–9 und 0 wählen direkt.'
+  : hint[usesBaskets() ? 'catch' : 'route'];
 const hint = {
   catch: '← → lenkt. Leertaste oder ↓ wirft sofort ein. Unten fällt das Wort von selbst in den Korb.',
   route: '← oder → lenkt das Wort. An der Linie zählt die erreichte Spur. Auch mit 1, 2 oder Tippen.'
@@ -48,7 +56,7 @@ const acceleration = $('acceleration');
 const fallLimit = $('fallLimit');
 let tempoStep = 0;
 let displayedDuration;
-const startingTime = () => pace[speed] + (mode === 'route' ? 800 : 0);
+const startingTime = () => pace[speed] + (usesBaskets() ? 0 : 800);
 const minimumTime = () => Number(fallLimit.value) * 1000;
 const tempoFactor = () => 1 - Number(acceleration.value) / 100;
 
@@ -68,7 +76,7 @@ function adjustTempo(correct) {
     tempoStep = Math.max(-2, Math.min(fastestStep(), tempoStep + (correct ? 1 : -1)));
   }
   speedHint();
-  if ((!endless() && index === roundSize - 1) || before === duration()) return '';
+  if ((!endless() && index === roundSize() - 1) || before === duration()) return '';
   return correct ? ' · Nächstes Wort schneller' : ' · Nächstes Wort langsamer';
 }
 
@@ -85,14 +93,45 @@ function speedHint() {
     : 'Entscheide in deinem eigenen Tempo.';
 }
 const card = () => deck[index % deck.length];
-const branch = () => routes[card().type][step];
+const branch = () => decisions[step];
+
+function decisionPath(labels, shortLabels, correct, question) {
+  const path = [];
+  let start = 0, end = labels.length;
+  while (end - start > 1) {
+    const middle = start + Math.ceil((end - start) / 2);
+    const describe = (from, to) => to - from === 1
+      ? labels[from]
+      : shortLabels.slice(from, to).join(' · ');
+    const choice = correct < middle ? 0 : 1;
+    path.push({
+      question,
+      labels: [describe(start, middle), describe(middle, end)],
+      choice
+    });
+    if (choice === 0) end = middle;
+    else start = middle;
+  }
+  return path;
+}
+
+function subtypePath(card) {
+  if (card.type === 2) {
+    return decisionPath(adjectiveUses, adjectiveUses, card.subtype, 'Wie wird das Adjektiv im Satz gebraucht?');
+  }
+  if (card.type === 3) {
+    const short = pronounKinds.map(kind => kind.replace('pronomen', ''));
+    return decisionPath(pronounKinds, short, card.subtype, 'Zu welcher Gruppe gehört das Pronomen?');
+  }
+  return [];
+}
 
 function setPressed(group, key, value) {
   for (const b of group.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset[key] === String(value)));
 }
 function settings() {
   setPressed(ui.modes,'mode',mode); setPressed(ui.levels,'level',level); setPressed(ui.speeds,'speed',speed);
-  ui.levelHint.textContent = ['Klare Fälle aus dem Alltag.', 'Gebeugte Formen und Wörter im Satz.', 'Grenzfälle, Nominalisierungen und Zahladjektive.'][level];
+  ui.levelHint.textContent = ['Klare Fälle aus dem Alltag.', 'Gebeugte Formen und Wörter im Satz.', 'Grenzfälle, Nominalisierungen und Zahladjektive.', 'Zehn Wortarten, Pronomenarten und Adjektivgebrauch.'][level];
   speedHint();
 }
 function stats() {
@@ -101,14 +140,15 @@ function stats() {
   $('streakPanel').classList.toggle('on-streak', streak >= 3);
   const progress = $('roundProgress');
   progress.hidden = endless();
-  progress.value = Math.min(roundSize, index + (state === 'feedback' ? 1 : 0));
+  progress.max = roundSize();
+  progress.value = Math.min(roundSize(), index + (state === 'feedback' ? 1 : 0));
   $('highscorePanel').hidden = !endless();
   $('scoreboard').classList.toggle('has-highscore', endless());
   if (endless()) updateHighscore();
   ui.roundLabel.textContent = endless() ? 'WÖRTER' : 'RUNDE';
   ui.round.textContent = endless()
     ? String(state === 'feedback' ? index + 1 : index)
-    : `${state === 'idle' ? 0 : Math.min(index + 1, roundSize)} / ${roundSize}`;
+    : `${state === 'idle' ? 0 : Math.min(index + 1, roundSize())} / ${roundSize()}`;
 }
 function message(text, kind = '') {
   ui.feedback.textContent = text;
@@ -117,21 +157,37 @@ function message(text, kind = '') {
 function targets() {
   ui.arena.classList.toggle('has-lanes', usesBaskets());
   const active = state === 'playing';
-  const labels = usesBaskets() ? classes : active ? stations[branch()[0]][1] : stations.change[1];
+  const labels = usesBaskets() ? activeClasses() : active ? branch().labels : stations.change[1];
+  const tenBaskets = usesBaskets() && advanced();
+  ui.targets.classList.toggle('ten-targets', tenBaskets);
+  ui.arena.style.setProperty('--lane-width', tenBaskets ? '10%' : '20%');
   const focused = ui.targets.contains(document.activeElement) ? [...ui.targets.children].indexOf(document.activeElement) : -1;
   ui.targets.replaceChildren(...labels.map((name, i) => {
     const b = document.createElement('button');
     b.className = 'target';
-    b.style.setProperty('--tint', usesBaskets() ? tints[i] : ['#d8c9ff','#bde6ff'][i]);
+    b.style.setProperty('--tint', usesBaskets() ? activeTints()[i] : ['#d8c9ff','#bde6ff'][i]);
     b.disabled = !active;
     const kbd = document.createElement('kbd');
-    kbd.textContent = i+1; kbd.setAttribute('aria-hidden','true');
-    b.append(kbd, document.createTextNode(name));
+    kbd.textContent = i === 9 ? '0' : i+1; kbd.setAttribute('aria-hidden','true');
+    b.append(kbd);
+    const label = document.createElement('span');
+    label.className = 'target-name';
+    label.textContent = name;
+    b.append(label);
+    if (tenBaskets) {
+      const short = document.createElement('span');
+      short.className = 'target-short';
+      short.textContent = tenShortLabels[i];
+      short.setAttribute('aria-hidden', 'true');
+      b.setAttribute('aria-label', name);
+      b.title = name;
+      b.append(short);
+    }
     b.addEventListener('click', () => usesBaskets() ? answer(i) : steerSwitch(i));
     return b;
   }));
   if (active && mode === 'route' && focused >= 0) ui.targets.children[Math.min(focused, labels.length-1)].focus();
-  if (active && usesBaskets()) markBasket(keyboardTarget < 0 ? 2 : keyboardTarget);
+  if (active && usesBaskets()) markBasket(keyboardTarget < 0 ? defaultBasket() : keyboardTarget);
   if (active && !usesBaskets()) markBasket(keyboardTarget);
 }
 function markBasket(choice) {
@@ -158,6 +214,7 @@ function idle() {
   stopMotion();
   dropAnimation?.cancel();
   state = 'idle'; index = points = streak = hits = 0;
+  refining = false;
   bestStreak = 0;
   tempoStep = 0;
   speedHint();
@@ -199,7 +256,13 @@ function start() {
     deck = endlessDeck();
   } else {
     const bank = vocabulary[level];
-    const grouped = classes.map((_,type) => shuffle(bank.filter(c => c.type === type)).slice(0,2));
+    const grouped = activeClasses().map((_,type) => {
+      const words = shuffle(bank.filter(card => card.type === type));
+      if (advanced() && (type === 2 || type === 3)) {
+        return [...new Map(words.map(card => [card.subtype, card])).values()];
+      }
+      return words.slice(0, 2);
+    });
     deck = shuffle(grouped.flat());
   }
   index = points = streak = hits = step = 0;
@@ -213,12 +276,19 @@ function start() {
   }
 }
 function nextCard() {
-  if (!endless() && index === roundSize) { finish(); return; }
+  if (!endless() && index === roundSize()) { finish(); return; }
   if (endless() && index > 0 && index % deck.length === 0) deck = endlessDeck(deck);
   step = 0;
+  refining = false;
   const c = card();
+  if (mode === 'route') {
+    decisions = advanced()
+      ? [...decisionPath(tenClasses, tenShortLabels, c.type, 'Zu welcher Gruppe gehört das Wort?'), ...subtypePath(c)]
+      : routes[c.type].map(([key, choice]) => ({
+        key, question: stations[key][0], labels: stations[key][1], choice
+      }));
+  }
   ui.word.textContent = c.word;
-  ui.word.style.cursor = usesBaskets() ? 'grab' : 'default';
   ui.context.hidden = !c.sentence;
   if (c.sentence) {
     const [before,after] = c.sentence.split('*');
@@ -230,20 +300,25 @@ function nextCard() {
 function showStage() {
   keyboardTarget = -1;
   ui.word.style.left = '50%';
+  ui.word.style.cursor = usesBaskets() ? 'grab' : 'default';
   state = 'playing'; elapsed = 0; last = 0;
   speedHint();
   ui.overlay.hidden = true; ui.word.hidden = false; ui.trail.hidden = !speed;
   ui.pause.disabled = false; ui.pause.textContent = 'Ⅱ'; ui.pause.setAttribute('aria-label','Pausieren');
-  ui.route.hidden = mode !== 'route';
-  if (mode === 'route') {
+  ui.route.hidden = usesBaskets();
+  if (!usesBaskets()) {
     delete $('junction').dataset.direction;
-    const route = routes[card().type];
-    ui.path.textContent = ['Start', ...route.slice(0,step).map(([key,i]) => stations[key][1][i])].join(' → ');
-    const [station] = branch();
-    ui.question.textContent = stations[station][0];
-    $('articleTip').hidden = station !== 'article';
+    const heading = refining ? activeClasses()[card().type] : 'Start';
+    ui.path.textContent = [heading, ...decisions.slice(0,step).map(item => item.labels[item.choice])].join(' → ');
+    ui.question.textContent = branch().question;
+    $('articleTip').hidden = branch().key !== 'article';
   }
-  targets(); stats(); paint(); frame = requestAnimationFrame(tick);
+  targets();
+  if (usesBaskets() && advanced()) {
+    keyboardTarget = defaultBasket();
+    positionWordOverBasket();
+  }
+  stats(); paint(); frame = requestAnimationFrame(tick);
 }
 function paint() {
   const route = !usesBaskets();
@@ -252,7 +327,7 @@ function paint() {
     : 0;
   const progress = speed ? Math.min(1,elapsed/duration()) : .43 + .57 * travel;
   const top = ui.context.hidden ? 12 : ui.context.offsetHeight + 18;
-  const bottom = mode === 'route' ? ui.route.offsetHeight + 19 : 10;
+  const bottom = route ? ui.route.offsetHeight + 19 : 10;
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
   const fall = speed && usesBaskets() ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
@@ -318,11 +393,22 @@ function answer(choice, fastDrop = false) {
   if (state !== 'playing') return;
   ui.word.style.rotate = '';
   const c = card();
-  const expected = usesBaskets() ? c.type : branch()[1];
+  const subtype = advanced() && c.subtype !== null
+    ? (c.type === 2 ? adjectiveUses : pronounKinds)[c.subtype]
+    : '';
+  const solution = [activeClasses()[c.type], subtype].filter(Boolean).join(' · ');
+  const expected = usesBaskets() ? c.type : branch().choice;
   const correct = choice === expected;
   stopMotion();
-  if (correct && mode === 'route' && step + 1 < routes[c.type].length) {
-    message(`✓ ${stations[branch()[0]][1][choice]}. Weiter zur nächsten Weiche.`,'good');
+  if (correct && usesBaskets() && advanced() && c.subtype !== null) {
+    refining = true;
+    decisions = subtypePath(c);
+    step = 0;
+    message(`✓ ${activeClasses()[c.type]}. Bestimme jetzt die Unterart oder den Gebrauch.`, 'good');
+    play('step'); showStage(); return;
+  }
+  if (correct && !usesBaskets() && step + 1 < decisions.length) {
+    message(`✓ ${branch().labels[choice]}. Weiter zur nächsten Weiche.`, 'good');
     step++; play('step'); showStage(); return;
   }
   state = 'feedback'; ui.pause.disabled = true;
@@ -335,13 +421,13 @@ function answer(choice, fastDrop = false) {
     const earned = 100 + Math.min(5,streak-1)*20 + tempoBonus;
     points += earned;
     const nextPace = adjustTempo(true);
-    ui.word.style.background = tints[c.type];
+    ui.word.style.background = activeTints()[c.type];
     const milestone = [3, 5, 10].includes(streak);
     pop();
     reaction(milestone ? 'horn' : 'clap');
     play(milestone ? 'combo' : 'good');
     const celebration = milestone ? ` · ✦ ${streak} in Folge!` : '';
-    message(`✓ ${c.word} → ${classes[c.type]}: ${c.clue}. · +${earned} Punkte${celebration}${nextPace}`,'good');
+    message(`✓ ${c.word} → ${solution}: ${c.clue}. · +${earned} Punkte${celebration}${nextPace}`,'good');
   } else {
     const lost = Math.min(points, 25);
     points -= lost;
@@ -349,9 +435,9 @@ function answer(choice, fastDrop = false) {
     streak = 0;
     reaction('tears');
     play('miss');
-    const correction = mode === 'route' ? ` Hier: ${stations[branch()[0]][1][expected]}.` : '';
+    const correction = !usesBaskets() ? ` Hier: ${branch().labels[expected]}.` : '';
     const result = choice < 0 ? 'Abzweigung verpasst.' : !usesBaskets() ? 'Falsche Abzweigung.' : 'Noch nicht richtig.';
-    message(`${result}${correction} ${c.word} → ${classes[c.type]}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
+    message(`${result}${correction} ${c.word} → ${solution}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
   }
   if (usesBaskets()) sink(choice, fastDrop);
   stats();
@@ -523,9 +609,9 @@ ui.word.addEventListener('pointerup',e => {
   const choice=dropTarget(e.clientX,e.clientY);
   drag=null;
   if (choice>=0) answer(choice);
-  else { ui.word.style.left='50%'; markBasket(2); }
+  else { ui.word.style.left='50%'; markBasket(defaultBasket()); }
 });
-ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) { drag=null; ui.word.style.left='50%'; markBasket(2); } });
+ui.word.addEventListener('lostpointercapture',e => { if (drag === e.pointerId) { drag=null; ui.word.style.left='50%'; markBasket(defaultBasket()); } });
 ui.start.onclick = start;
 ui.endRun.onclick = () => { if (endless() && state === 'paused') finish(); };
 ui.pause.onclick = () => state === 'paused' ? resume() : pause(true);
@@ -598,9 +684,9 @@ document.addEventListener('keydown',e => {
   }
   if (e.repeat) return;
   if (e.key === 'Escape') { if (state === 'playing') pause(true); else if (state === 'paused') resume(); }
-  if (state === 'playing' && /^[1-5]$/.test(e.key) && Number(e.key)<=ui.targets.children.length) {
+  if (state === 'playing' && /^[0-9]$/.test(e.key) && (Number(e.key) || 10) <= ui.targets.children.length) {
     e.preventDefault();
-    const choice = Number(e.key)-1;
+    const choice = (Number(e.key) || 10) - 1;
     if (usesBaskets()) answer(choice);
     else steerSwitch(choice);
   }

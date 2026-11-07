@@ -375,3 +375,17 @@ dialog {background: #291538;}
 .pace-controls input {width: 100%; margin: 0; accent-color: #e9a9ff;}
 .pace-controls small {letter-spacing: 0; color: var(--muted); font-weight: 500; margin-bottom: 5px;}
 .pace-controls:disabled {opacity: .62;}
+
+.target-short {display: none;}
+.targets.ten-targets {gap: 4px;}
+.ten-targets .target {font-size: clamp(9px, 1.1vw, 13px);}
+.has-lanes .lanes {
+  background: repeating-linear-gradient(90deg, transparent 0,
+    transparent calc(var(--lane-width, 20%) - 1px),
+    #e9a5ff60 calc(var(--lane-width, 20%) - 1px), #e9a5ff60 var(--lane-width, 20%));
+}
+@media (max-width: 1000px) {
+  .ten-targets .target-name {display: none;}
+  .ten-targets .target-short {display: inline;}
+  .targets.ten-targets {gap: 2px; padding-inline: 4px;}
+}

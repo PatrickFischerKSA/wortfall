@@ -209,3 +209,101 @@ const routes = [
   [['change',0],['form',1],['gender',1],['article',1]],
   [['change',1]]
 ];
+
+// Das Zehn-Wortarten-Modell in diesem Niveau trennt Artikel und Zahlwörter
+// sowie die vier bisher unter Partikeln zusammengefassten Wortarten.
+const tenClasses = ['Nomen', 'Verb', 'Adjektiv', 'Pronomen', 'Artikel', 'Numerale', 'Adverb', 'Präposition', 'Konjunktion', 'Interjektion'];
+const tenShortLabels = ['Nom.', 'Verb', 'Adj.', 'Pron.', 'Art.', 'Num.', 'Adv.', 'Präp.', 'Konj.', 'Int.'];
+const tenTints = [...tints, '#ffe4a9', '#a5f7ec', '#e2b8ff', '#ffb6dd', '#d5f58f'];
+const adjectiveUses = ['Attributiv', 'Prädikativ', 'Adverbial'];
+const pronounKinds = ['Personalpronomen', 'Possessivpronomen', 'Reflexivpronomen', 'Demonstrativpronomen', 'Relativpronomen', 'Interrogativpronomen', 'Indefinitpronomen', 'Reziprokpronomen'];
+
+const tenExamples = [
+  [
+    'Lesen|Das * beruhigt sie.|Der Artikel «das» begleitet den nominalisierten Infinitiv',
+    'Morgen|Der * war kühl.|«Morgen» bezeichnet hier eine Tageszeit und steht mit Artikel',
+    'Dank|Der * galt dem ganzen Team.|«Dank» ist hier das Subjekt und hat das feste Genus maskulin',
+    'Aufsehen|Das Experiment erregte *.|«Das Aufsehen» ist ein Nomen mit festem Genus',
+    'Blau|Das tiefe * gefiel ihm.|Die Farbbezeichnung ist hier nominalisiert'
+  ],
+  [
+    'lesen|Die Kinder * im Garten.|Die Form lässt sich nach der Person verändern. Ich lese, sie lesen',
+    'sei|Sie sagte, der Weg * frei.|«Sei» ist Konjunktiv I von «sein»',
+    'wäre|Das * eine Überraschung.|«Wäre» ist Konjunktiv II von «sein»',
+    'stehen|Die Gläser * auf dem Tisch.|Die Form lässt sich konjugieren. Das Glas steht, die Gläser stehen',
+    'widerriefe|Er * seine Zusage nur im Notfall.|Konjunktiv II von «widerrufen»'
+  ],
+  [
+    'schnelle|Der * Zug hält hier.|0|«Schnelle» steht direkt beim Nomen «Zug» und hat eine Endung',
+    'kalten|Wir trinken den * Tee.|0|«Kalten» beschreibt das Nomen «Tee» direkt',
+    'schwer|Der Koffer ist *.|1|«Schwer» beschreibt das Subjekt über das Verb «ist»',
+    'ruhig|Das Meer bleibt *.|1|«Ruhig» beschreibt das Subjekt über das Verb «bleibt»',
+    'leise|Sie spricht *.|2|«Leise» beschreibt, wie sie spricht',
+    'schnell|Der Zug fährt *.|2|«Schnell» beschreibt, wie der Zug fährt',
+    'sorgfältig|Er prüft die Lösung *.|2|«Sorgfältig» beschreibt, wie er prüft'
+  ],
+  [
+    'ihm|Wir helfen * beim Umzug.|0|«Ihm» steht für eine Person im Dativ',
+    'sie|Heute kommen * mit dem Zug.|0|«Sie» steht hier für mehrere Personen',
+    'mein|Wo liegt * Heft?|1|«Mein» drückt aus, wem das Heft gehört',
+    'ihren|Sie rief * Bruder an.|1|«Ihren» bezeichnet hier eine Zugehörigkeit',
+    'sich|Die Katze putzt *.|2|«Sich» bezieht sich auf das Subjekt «die Katze» zurück',
+    'mich|Ich freue * auf morgen.|2|«Mich» bezieht sich hier auf das Subjekt «ich» zurück',
+    'dieser|* Weg führt zum Bahnhof.|3|«Dieser» weist auf einen bestimmten Weg hin',
+    'jene|Ich meine * dort hinten.|3|«Jene» weist auf eine bestimmte Person oder Sache hin',
+    'deren|Die Autorin, * Buch wir lesen, kommt heute.|4|«Deren» leitet einen Relativsatz ein und bezieht sich auf «Autorin»',
+    'der|Der Hund, * bellt, ist jung.|4|«Der» bezieht sich auf «Hund» und leitet einen Relativsatz ein',
+    'wem|* gehört das Velo?|5|«Wem» fragt nach einer Person im Dativ',
+    'welches|* Buch möchtest du lesen?|5|«Welches» fragt nach einer Auswahl',
+    'niemand|Heute war * im Büro.|6|«Niemand» bezeichnet eine unbestimmte Menge von null Personen',
+    'jemand|Hat * geklopft?|6|«Jemand» steht für eine unbestimmte Person',
+    'einander|Die Nachbarn helfen *.|7|«Einander» drückt aus, dass die Hilfe gegenseitig ist'
+  ],
+  [
+    'das|Ich öffne * Fenster.|«Das» steht vor einem Nomen und bestimmt es',
+    'eine|Sie liest * Geschichte.|«Eine» ist ein unbestimmter Artikel',
+    'dem|Wir geben * Kind den Ball.|«Dem» ist ein bestimmter Artikel im Dativ',
+    'den|Ich kenne * Weg.|«Den» ist ein bestimmter Artikel im Akkusativ',
+    'einem|Er fährt mit * Velo zur Schule.|«Einem» ist ein unbestimmter Artikel im Dativ'
+  ],
+  [
+    'zwölf|Die * Kinder warten.|«Zwölf» gibt eine Anzahl an',
+    'drei|Auf dem Tisch liegen * Äpfel.|«Drei» gibt eine Anzahl an',
+    'erste|Sie liest den * Satz.|«Erste» gibt einen Platz in einer Reihenfolge an',
+    'dritten|Sie sitzt in der * Reihe.|«Dritten» bezeichnet die Position der Reihe',
+    'hundert|Im Saal sitzen * Personen.|«Hundert» bezeichnet eine Anzahl'
+  ],
+  [
+    'morgen|Wir kommen * wieder.|«Morgen» gibt an, wann wir kommen',
+    'dort|Wir treffen uns *.|«Dort» gibt den Ort an',
+    'gestern|Sie kam * an.|«Gestern» ist eine Zeitangabe',
+    'oft|Er fährt * mit dem Zug.|«Oft» bezeichnet die Häufigkeit',
+    'trotzdem|Es regnet. Wir gehen * hinaus.|«Trotzdem» ist hier ein Adverb und steht im Hauptsatz'
+  ],
+  [
+    'mit|Wir fahren * dem Zug.|«Mit» steht vor einer Wortgruppe im Dativ',
+    'trotz|* des Regens spielen wir draussen.|«Trotz» leitet eine Wortgruppe im Genitiv ein',
+    'während|Sie schwieg * des Films.|«Während» steht hier vor einer Wortgruppe im Genitiv',
+    'ohne|Sie ging * ihren Mantel hinaus.|«Ohne» verlangt hier den Akkusativ',
+    'wegen|* der Hitze blieb das Fenster offen.|«Wegen» leitet die Wortgruppe «der Hitze» ein'
+  ],
+  [
+    'während|Er las, * sie schlief.|«Während» leitet hier einen Nebensatz ein',
+    'weil|Er blieb zu Hause, * er krank war.|«Weil» leitet einen Nebensatz ein',
+    'und|Mia * Leo warten draussen.|«Und» verbindet zwei gleichrangige Namen',
+    'obwohl|Sie ging hinaus, * es schneite.|«Obwohl» leitet einen Nebensatz ein',
+    'aber|Es regnet, * wir gehen hinaus.|«Aber» verbindet zwei gleichrangige Hauptsätze'
+  ],
+  [
+    'Aua|*, das tut weh!|«Aua» ist ein selbstständiger Ausruf',
+    'Hurra|*, wir haben gewonnen!|«Hurra» drückt Freude aus und steht als Ausruf ausserhalb des Satzes',
+    'Pst|*, da kommt jemand.|«Pst» ist ein selbstständiger Ruf zur Ruhe',
+    'Igitt|*, das riecht unangenehm!|«Igitt» ist ein Ausruf des Ekels',
+    'Oje|*, jetzt regnet es schon wieder.|«Oje» ist ein selbstständiger Ausruf'
+  ]
+];
+
+vocabulary.push(tenExamples.flatMap((entries, type) => entries.map(entry => {
+  const [word, sentence, third, fourth] = entry.split('|');
+  return {word, type, sentence, subtype: fourth ? Number(third) : null, clue: fourth ?? third};
+})));
