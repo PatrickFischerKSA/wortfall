@@ -8,6 +8,7 @@ let state = 'idle', deck = [], index = 0, points = 0, streak = 0, hits = 0, step
 let elapsed = 0, frame = 0, last = 0, nextTimer, drag = null, dropAnimation;
 let keyboardTarget = -1;
 let bestStreak = 0;
+const showEffects = () => ui.effects.value === 'show' && !reduceMotion.matches;
 const advanced = () => level === 3;
 const activeClasses = () => advanced() ? tenClasses : classes;
 const activeTints = () => advanced() ? tenTints : tints;
@@ -233,6 +234,7 @@ function stopMotion() {
   for (const b of ui.targets.children) b.classList.remove('ready');
 }
 function idle() {
+  ui.particles.replaceChildren();
   stopMotion();
   dropAnimation?.cancel();
   state = 'idle'; index = points = streak = hits = 0;
@@ -359,7 +361,7 @@ function paint() {
   const distance = Math.max(0,ui.arena.clientHeight - top - bottom - ui.word.offsetHeight);
   const fall = speed && usesBaskets() ? progress * (.55 + .45 * progress) : progress;
   const fraction = reduceMotion.matches ? .43 : fall;
-  const spin = speed && ui.effects.checked && !reduceMotion.matches && drag === null;
+  const spin = speed && showEffects() && drag === null;
   const turn = Math.max(0, Math.min(1, (progress - .12) / .76));
   const angle = 180 * Math.sin(Math.PI * turn) ** 2;
   ui.word.style.rotate = spin ? `${(index % 2 ? -1 : 1) * angle}deg` : '';
@@ -448,9 +450,10 @@ function answer(choice, fastDrop = false) {
     points += earned;
     const nextPace = adjustTempo(true);
     ui.word.style.background = activeTints()[c.type];
-    const milestone = [3, 5, 10].includes(streak);
-    pop();
-    reaction(milestone ? 'horn' : 'clap');
+    const milestone = streak === 3 || streak % 5 === 0;
+    const cheer = milestone ? `🔥 ${streak} in Folge!` : ['Volltreffer!', 'Stark!', 'Sauber!'][(hits - 1) % 3];
+    reaction(milestone ? 'horn' : 'clap', cheer);
+    if (showEffects()) pop(milestone ? 48 : 22);
     play(milestone ? 'combo' : 'good');
     const celebration = milestone ? ` · ✦ ${streak} in Folge!` : '';
     message(`✓ ${c.word} → ${solution}: ${c.clue}. · +${earned} Punkte${celebration}${nextPace}`,'good');
@@ -458,12 +461,13 @@ function answer(choice, fastDrop = false) {
     const lost = Math.min(points, 25);
     points -= lost;
     const nextPace = adjustTempo(false);
+    const encouragement = streak >= 3 ? 'Neue Serie? Du schaffst das!' : 'Kopf hoch. Nächstes Wort!';
     streak = 0;
-    reaction('tears');
+    reaction('tears', encouragement);
     play('miss');
     const correction = !usesBaskets() ? ` Hier: ${branch().labels[expected]}.` : '';
     const result = choice < 0 ? 'Abzweigung verpasst.' : !usesBaskets() ? 'Falsche Abzweigung.' : 'Noch nicht richtig.';
-    message(`${result}${correction} ${c.word} → ${solution}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace}`,'bad');
+    message(`${result}${correction} ${c.word} → ${solution}: ${c.clue}. · ${lost ? '−' + lost : '0'} Punkte${nextPace} · ${encouragement}`,'bad');
   }
   if (usesBaskets()) sink(choice, fastDrop);
   stats();
@@ -471,6 +475,7 @@ function answer(choice, fastDrop = false) {
 }
 function advanceAfterAnswer() {
   if (state !== 'feedback') return;
+  ui.particles.replaceChildren();
   clearTimeout(nextTimer);
   dropAnimation?.cancel();
   ui.word.style.background = '';
@@ -564,8 +569,15 @@ function soundGlide(start, length, from, to, volume, type) {
     soundEnvelope(source, source, start, length, volume);
   }
 }
-function reaction(type) {
-  if (!ui.effects.checked || reduceMotion.matches) return;
+function reaction(type, text) {
+  if (ui.effects.value === 'off') return;
+  ui.particles.replaceChildren();
+  const callout = document.createElement('span');
+  callout.className = `result-callout result-${type}`;
+  callout.textContent = text;
+  ui.particles.append(callout);
+  if (!showEffects()) return;
+  callout.classList.add('result-show');
   const impact = document.createElement('span');
   impact.className = `impact impact-${type}`;
   impact.addEventListener('animationend', () => impact.remove(), {once:true});
@@ -585,9 +597,8 @@ function reaction(type) {
     ui.particles.append(tear);
   }
 }
-function pop() {
-  if (!ui.effects.checked || reduceMotion.matches) return;
-  for (let i=0;i<22;i++) {
+function pop(count) {
+  for (let i=0;i<count;i++) {
     const spark = document.createElement('i'), angle = i*2.4, radius = 45 + Math.random()*100;
     spark.style.setProperty('--x',Math.cos(angle)*radius+'px');
     spark.style.setProperty('--y',Math.sin(angle)*radius+'px');
@@ -597,7 +608,7 @@ function pop() {
   }
 }
 function sink(choice, fastDrop) {
-  if (reduceMotion.matches || !ui.effects.checked) {
+  if (!showEffects()) {
     if (fastDrop) ui.word.hidden = true;
     return;
   }
@@ -660,10 +671,8 @@ ui.musicToggle.onclick = () => {
 };
 ui.guide.onclick = () => { pause(); ui.help.showModal(); };
 ui.effects.onchange = () => {
-  if (!ui.effects.checked) {
-    ui.particles.replaceChildren();
-    ui.word.style.rotate = '';
-  }
+  ui.particles.replaceChildren();
+  ui.word.style.rotate = '';
 };
 ui.modes.onclick = e => { const b=e.target.closest('button'); if (b && b.dataset.mode !== mode) { mode=b.dataset.mode; settings(); idle(); } };
 ui.levels.onclick = e => { const b=e.target.closest('button'); if (b && Number(b.dataset.level) !== level) { level=Number(b.dataset.level); settings(); idle(); } };

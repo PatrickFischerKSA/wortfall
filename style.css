@@ -398,3 +398,41 @@ dialog {background: #291538;}
   .tools button {padding-inline: 7px;}
   #guide span {display: none;}
 }
+
+#effects {
+  background: #291538;
+  color: #fff4ff;
+  border: 1px solid #9369b5;
+  border-radius: 7px;
+  padding: 6px;
+  font: inherit;
+}
+.result-callout {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 33%;
+  translate: -50% -50%;
+  width: max-content;
+  max-width: 90%;
+  padding: .25em .65em;
+  border: 2px solid currentColor;
+  border-radius: .6em;
+  background: #221131;
+  color: #e7ff9e;
+  font-size: clamp(16px, 3.2vw, 32px);
+  font-weight: 900;
+  text-align: center;
+}
+.result-tears {color: #c0eaff;}
+.result-horn {color: #ffd477; font-size: clamp(20px, 4.5vw, 48px);}
+.result-show {animation: result-arrival .28s ease-out both; box-shadow: 0 0 25px #d494ff90;}
+.result-show.result-horn {box-shadow: 0 0 32px #ffd477b0;}
+@keyframes result-arrival {
+  from {opacity: 0; transform: scale(.75);}
+  65% {opacity: 1; transform: scale(1.05);}
+  to {transform: scale(1);}
+}
+@media (prefers-reduced-motion: reduce) {
+  .particles:has(.result-callout) {display: block;}
+}
