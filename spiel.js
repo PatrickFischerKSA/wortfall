@@ -11,7 +11,26 @@ let bestStreak = 0;
 const advanced = () => level === 3;
 const activeClasses = () => advanced() ? tenClasses : classes;
 const activeTints = () => advanced() ? tenTints : tints;
-const roundSize = () => advanced() ? 27 : 10;
+const refinements = {
+  2: {
+    control: $('adjectiveModule'),
+    labels: adjectiveUses,
+    short: adjectiveUses,
+    question: 'Wie wird das Adjektiv im Satz gebraucht?'
+  },
+  3: {
+    control: $('pronounModule'),
+    labels: pronounKinds,
+    short: pronounKinds.map(kind => kind.replace('pronomen', '')),
+    question: 'Zu welcher Gruppe gehört das Pronomen?'
+  }
+};
+function refinementFor(type) {
+  const module = refinements[type];
+  return advanced() && module?.control.checked ? module : null;
+}
+const roundSize = () => activeClasses().reduce((total, _, type) =>
+  total + (refinementFor(type)?.labels.length ?? 2), 0);
 let refining = false;
 let decisions = [];
 const defaultBasket = () => advanced() ? 5 : 2;
@@ -116,14 +135,9 @@ function decisionPath(labels, shortLabels, correct, question) {
 }
 
 function subtypePath(card) {
-  if (card.type === 2) {
-    return decisionPath(adjectiveUses, adjectiveUses, card.subtype, 'Wie wird das Adjektiv im Satz gebraucht?');
-  }
-  if (card.type === 3) {
-    const short = pronounKinds.map(kind => kind.replace('pronomen', ''));
-    return decisionPath(pronounKinds, short, card.subtype, 'Zu welcher Gruppe gehört das Pronomen?');
-  }
-  return [];
+  const module = refinementFor(card.type);
+  if (!module || card.subtype === null) return [];
+  return decisionPath(module.labels, module.short, card.subtype, module.question);
 }
 
 function setPressed(group, key, value) {
@@ -135,6 +149,8 @@ function settings() {
   speedHint();
 }
 function stats() {
+  $('grammarModules').hidden = !advanced();
+  $('grammarModules').disabled = ['playing', 'feedback', 'paused'].includes(state);
   ui.score.textContent = String(points).padStart(3,'0');
   ui.streak.textContent = streak;
   $('streakPanel').classList.toggle('on-streak', streak >= 3);
@@ -258,7 +274,7 @@ function start() {
     const bank = vocabulary[level];
     const grouped = activeClasses().map((_,type) => {
       const words = shuffle(bank.filter(card => card.type === type));
-      if (advanced() && (type === 2 || type === 3)) {
+      if (refinementFor(type)) {
         return [...new Map(words.map(card => [card.subtype, card])).values()];
       }
       return words.slice(0, 2);
@@ -393,14 +409,12 @@ function answer(choice, fastDrop = false) {
   if (state !== 'playing') return;
   ui.word.style.rotate = '';
   const c = card();
-  const subtype = advanced() && c.subtype !== null
-    ? (c.type === 2 ? adjectiveUses : pronounKinds)[c.subtype]
-    : '';
+  const subtype = refinementFor(c.type)?.labels[c.subtype];
   const solution = [activeClasses()[c.type], subtype].filter(Boolean).join(' · ');
   const expected = usesBaskets() ? c.type : branch().choice;
   const correct = choice === expected;
   stopMotion();
-  if (correct && usesBaskets() && advanced() && c.subtype !== null) {
+  if (correct && usesBaskets() && subtype) {
     refining = true;
     decisions = subtypePath(c);
     step = 0;
@@ -630,6 +644,10 @@ ui.effects.onchange = () => {
 };
 ui.modes.onclick = e => { const b=e.target.closest('button'); if (b && b.dataset.mode !== mode) { mode=b.dataset.mode; settings(); idle(); } };
 ui.levels.onclick = e => { const b=e.target.closest('button'); if (b && Number(b.dataset.level) !== level) { level=Number(b.dataset.level); settings(); idle(); } };
+$('grammarModules').addEventListener('change', () => {
+  if (state === 'done') idle();
+  else stats();
+});
 ui.speeds.onclick = e => {
   const b=e.target.closest('button'); if (!b || Number(b.dataset.speed) === speed) return;
   const fraction = state === 'playing' || state === 'paused'

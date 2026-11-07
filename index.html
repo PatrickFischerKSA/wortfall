@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="de-CH">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=19"><script defer src="./woerter.js?v=19"></script><script defer src="./spiel.js?v=19"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Ein Arcade-Lernspiel zur Fünf-Wortarten-Lehre."><title>Wortfall – Die Wortarten-Arcade</title><link rel="stylesheet" href="./style.css?v=20"><script defer src="./woerter.js?v=19"></script><script defer src="./spiel.js?v=20"></script></head>
 <body>
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true">W</span> Wortfall<span class="tag">WORTARTEN-ARCADE</span></div><div class="tools"><button id="sound" aria-pressed="true">♫ <span>Ton</span></button><button id="guide">? <span>Spickzettel</span></button></div></header>
 <main>
@@ -62,6 +62,12 @@
 <div class="eyebrow">02 / NIVEAU</div>
 <div class="segments" id="levels"><button data-level="0" aria-pressed="true">Basis</button><button data-level="1" aria-pressed="false">Aufbau</button><button data-level="2" aria-pressed="false">Profi</button><button data-level="3" aria-pressed="false">10 Wortarten</button></div>
 <p id="levelHint">Klare Fälle aus dem Alltag.</p>
+<fieldset id="grammarModules" class="pace-controls grammar-modules" hidden>
+  <legend>Vertiefungen</legend>
+  <label><input type="checkbox" id="pronounModule" checked> Pronomenarten</label>
+  <label><input type="checkbox" id="adjectiveModule" checked> Adjektivgebrauch</label>
+  <small>Vor dem Start auswählen.</small>
+</fieldset>
 <div class="eyebrow">03 / TEMPO</div>
 <div class="segments" id="speeds"><button data-speed="0" aria-pressed="false">Ohne Uhr</button><button data-speed="1" aria-pressed="true">Normal</button><button data-speed="2" aria-pressed="false">Turbo</button></div>
 <p id="speedHint">6,3 Sekunden pro Wort. Treffer erhöhen das Tempo, Fehler bremsen es.</p>
@@ -79,5 +85,5 @@
 </div>
 <footer><span>Fünf-Wortarten-Lehre · Nomen, Verb, Adjektiv, Pronomen und Partikel</span><span>Mit Maus, Touch oder Tastatur</span></footer>
 </main>
-<dialog id="help"><form method="dialog"><button aria-label="Schliessen">×</button></form><div class="eyebrow">GRAMMATIK / HILFE</div><h2>Der Spickzettel</h2><p>Im Niveau «10 Wortarten» zählen Artikel und Numerale als eigene Wortarten. Die Gruppe der Partikeln ist dort in Adverbien, Präpositionen, Konjunktionen und Interjektionen aufgeteilt. Bei Adjektiven prüfst du den Gebrauch. «Der schnelle Zug» ist attributiv, «Der Zug ist schnell» prädikativ und «Der Zug fährt schnell» adverbial.</p><dl><dt>Nomen</dt><dd>Deklinierbar, festes Genus: <em>der Baum, die Bäume</em>.</dd><dt>Verb</dt><dd>Konjugierbar: <em>ich laufe, du läufst</em>.</dd><dt>Adjektiv</dt><dd>Die Artikelprobe klappt: <em>die helle Lampe, die zwölf Lampen</em>. Auch nicht steigerbare Adjektive bestehen diese Probe.</dd><dt>Pronomen</dt><dd>Begleitet oder ersetzt ein Nomen. In diesem Modell gehören Artikel dazu: <em>der, eine</em>.</dd><dt>Partikel</dt><dd>Unveränderbar. Dazu zählen in diesem Modell z. B. Präpositionen, Konjunktionen und Adverbien: <em>mit, weil, gestern</em>.</dd></dl></dialog>
+<dialog id="help"><form method="dialog"><button aria-label="Schliessen">×</button></form><div class="eyebrow">GRAMMATIK / HILFE</div><h2>Der Spickzettel</h2><p>Im Niveau «10 Wortarten» zählen Artikel und Numerale als eigene Wortarten. Die Gruppe der Partikeln ist dort in Adverbien, Präpositionen, Konjunktionen und Interjektionen aufgeteilt. Unter «Vertiefungen» kannst du Pronomenarten und den Adjektivgebrauch separat zuschalten. «Der schnelle Zug» ist attributiv, «Der Zug ist schnell» prädikativ und «Der Zug fährt schnell» adverbial.</p><dl><dt>Nomen</dt><dd>Deklinierbar, festes Genus: <em>der Baum, die Bäume</em>.</dd><dt>Verb</dt><dd>Konjugierbar: <em>ich laufe, du läufst</em>.</dd><dt>Adjektiv</dt><dd>Die Artikelprobe klappt: <em>die helle Lampe, die zwölf Lampen</em>. Auch nicht steigerbare Adjektive bestehen diese Probe.</dd><dt>Pronomen</dt><dd>Begleitet oder ersetzt ein Nomen. In diesem Modell gehören Artikel dazu: <em>der, eine</em>.</dd><dt>Partikel</dt><dd>Unveränderbar. Dazu zählen in diesem Modell z. B. Präpositionen, Konjunktionen und Adverbien: <em>mit, weil, gestern</em>.</dd></dl></dialog>
 </body></html>

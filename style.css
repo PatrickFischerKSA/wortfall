@@ -389,3 +389,6 @@ dialog {background: #291538;}
   .ten-targets .target-short {display: inline;}
   .targets.ten-targets {gap: 2px; padding-inline: 4px;}
 }
+
+.grammar-modules label {justify-content: flex-start; align-items: center; padding-block: 3px;}
+.grammar-modules input {width: auto;}
